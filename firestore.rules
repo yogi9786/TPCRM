@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Leads — only accessible by the owning user
+    match /leads/{leadId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Messages — accessible by authenticated users
+    match /messages/{msgId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Campaigns — only accessible by owner
+    match /campaigns/{campaignId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Meta leads — readable by authenticated users (written by backend/admin SDK)
+    match /meta_leads/{metaLeadId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

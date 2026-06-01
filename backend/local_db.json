@@ -1,0 +1,189 @@
+{
+  "messages": {
+    "9234c5a0-13c2-40fb-a4cd-10b2d0b05909": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "Hi {{name}}! \ud83d\udc4b Welcome to TekhPortal. We're excited to connect with you. How can we help today?",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:30:38.914200"
+    },
+    "fc99ef49-ce8f-414f-a837-fd0472ca873f": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "Hi {{name}}! \ud83d\udc4b Welcome to TekhPortal. We're excited to connect with you. How can we help today?",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:31:07.739990"
+    },
+    "6b3c1e9c-cffa-4bfb-93df-d7d6eab43476": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "Hi {{name}}! \ud83d\udc4b Welcome to TekhPortal. We're excited to connect with you. How can we help today?",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:33:31.914240"
+    },
+    "46925fb4-ee15-4226-8646-fee6ae46afd7": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:39:36.667367"
+    },
+    "d265bb99-c66e-4753-8482-f2fcf7be1cb5": {
+      "leadId": "",
+      "phone": "+1 415 523 8886",
+      "direction": "outbound",
+      "body": "join <tekhportal>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:41:32.175819"
+    },
+    "b85be7eb-e7ac-4467-bb19-d22fbba7b056": {
+      "leadId": "",
+      "phone": "+1 415 523 8886",
+      "direction": "outbound",
+      "body": "join <your-sandbox-word>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:41:52.318926"
+    },
+    "2cd0f45d-a6a4-415f-be17-f8577e8122ad": {
+      "leadId": "",
+      "phone": "+14155238886",
+      "direction": "outbound",
+      "body": "join <your-sandbox-word>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:42:10.178380"
+    },
+    "41f0054c-62ae-4246-b26a-440580dcfd36": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "test",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:46:19.513440"
+    },
+    "db8e70f1-9682-4c1a-b1b9-d198ced369a0": {
+      "leadId": "",
+      "phone": "+1 415 523 8886",
+      "direction": "outbound",
+      "body": "join <your-sandbox-keyword>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:46:56.648323"
+    },
+    "f3734a17-b241-4da1-94f2-2c9b2cb83f79": {
+      "leadId": "",
+      "phone": "+14155238886",
+      "direction": "outbound",
+      "body": "join <your-sandbox-keyword>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:47:39.281461"
+    },
+    "d996140b-e857-45f8-a91e-d13a3fed6fc0": {
+      "leadId": "",
+      "phone": "+14155238886",
+      "direction": "outbound",
+      "body": "join <your-sandbox-word>",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:47:58.446262"
+    },
+    "f64b0fcb-7084-4253-9bb4-2d8ea07c78f9": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T08:53:58.176150"
+    },
+    "44e7d06a-83f8-45df-9046-d83436d8e904": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "sent",
+      "twilioSid": "SM03c4abe6d90e77a2023c704ac9d9ceb2",
+      "createdAt": "2026-06-01T08:56:58.604167"
+    },
+    "16e42f9b-c051-40f8-b21f-31d7b7d00900": {
+      "leadId": "",
+      "phone": "80884 28270",
+      "direction": "outbound",
+      "body": "testing",
+      "status": "sent",
+      "twilioSid": "SM7ed7420f93ad49451af6db5e69cefd8c",
+      "createdAt": "2026-06-01T09:47:05.850297"
+    },
+    "b7438d46-6151-4581-b169-9ac015133bb8": {
+      "leadId": "",
+      "phone": "+91 80884 28270",
+      "direction": "outbound",
+      "body": "testing",
+      "status": "sent",
+      "twilioSid": "SM78a3898d3fa670863a5887cd8671d386",
+      "createdAt": "2026-06-01T09:55:01.926194"
+    },
+    "f396704a-ec90-4fba-93e5-5a59ad20938d": {
+      "leadId": "",
+      "phone": "7996633015",
+      "direction": "outbound",
+      "body": "hiiii testing",
+      "status": "sent",
+      "twilioSid": "SM5f8b2463a571a0a0bd2be3c803f17b90",
+      "createdAt": "2026-06-01T10:18:44.284988"
+    },
+    "fc85874f-0c3e-4b16-b1e3-349c04563fcb": {
+      "leadId": "",
+      "phone": "+91 80884 28270",
+      "direction": "outbound",
+      "body": "testing final",
+      "status": "sent",
+      "twilioSid": "SMffbe1eb7af82dab348b4b9164db6a47e",
+      "createdAt": "2026-06-01T10:19:14.979866"
+    },
+    "d68dff04-e262-4de0-b151-68664470496f": {
+      "leadId": "",
+      "phone": "9844199344",
+      "direction": "outbound",
+      "body": "amma idhu messege bandhre nange messege madu",
+      "status": "sent",
+      "twilioSid": "SMb4843a6bbbac63ddf775c066080714a4",
+      "createdAt": "2026-06-01T11:27:43.702797"
+    }
+  },
+  "test": {
+    "bed9049a-312d-48a0-9865-5403947936b8": {
+      "ping": "pong"
+    }
+  },
+  "leads": {
+    "4a46b943-2686-4705-ac6a-2b37437e7c5e": {
+      "fullName": "Rahul Sharma",
+      "email": "rahul@example.com",
+      "phone": "9876543210",
+      "companyName": "",
+      "leadSource": "Facebook Ads",
+      "serviceInterested": "Meta Ads",
+      "status": "New",
+      "notes": "Imported from Meta Ads form: Summer Campaign",
+      "userId": "demo-admin-uid",
+      "tags": [],
+      "value": null,
+      "whatsappOptIn": true,
+      "createdAt": "2026-06-01T08:44:36.339423",
+      "updatedAt": "2026-06-01T08:44:36.339423"
+    }
+  }
+}
