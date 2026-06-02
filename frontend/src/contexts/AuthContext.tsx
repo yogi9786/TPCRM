@@ -39,7 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user)
+      if (user) {
+        // Firebase is authenticated, but we must override getIdToken to return the FastAPI backend token
+        // since our backend requires the FastAPI JWT, not the Firebase ID token!
+        setCurrentUser(Object.assign(user, {
+          getIdToken: async () => localStorage.getItem('token') || ''
+        }))
+      } else {
+        // Only clear if there's no local token
+        if (!localStorage.getItem('token')) {
+          setCurrentUser(null)
+        }
+      }
       setLoading(false)
     })
     return unsub
@@ -82,14 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       } else {
         const errData = await response.json().catch(() => ({}))
-        const fbError = new Error(errData.detail || 'Login failed')
-        ;(fbError as any).code = 'auth/invalid-credential'
+        const errorDetail = errData.detail || `Server error ${response.status}`
+        const fbError = new Error(errorDetail)
+        if (response.status === 401 || response.status === 400) {
+           ;(fbError as any).code = 'auth/invalid-credential'
+        } else if (response.status === 404) {
+           // If the endpoint isn't found, Render hasn't deployed it yet or the URL is wrong
+           fbError.message = 'Backend authentication endpoint not found. Please ensure backend is updated.'
+           ;(fbError as any).code = 'auth/server-error'
+        }
         throw fbError
       }
     } catch (e: any) {
-      if (!e.code) {
-        e.code = 'auth/invalid-credential'
-        e.message = 'Invalid email or password'
+      if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+        e.message = 'Network error: Could not connect to backend. Please check VITE_API_URL and CORS.'
+        e.code = 'auth/server-error'
+      } else if (!e.code) {
+        e.code = 'auth/server-error'
+        if (!e.message) {
+            e.message = 'An unknown error occurred during login.'
+        }
       }
       throw e
     }
