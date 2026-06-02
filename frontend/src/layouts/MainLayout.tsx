@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import Sidebar from './Sidebar'
+import ChatbotWidget from '../components/ChatbotWidget'
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +15,9 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+
+      {/* Global AI Chatbot Widget */}
+      <ChatbotWidget />
     </div>
   )
 }

@@ -79,6 +79,17 @@ export default function Meta() {
     toast.success(`${label} copied!`)
   }
 
+  function exportMetaCSV() {
+    const header = ['Name', 'Email', 'Phone', 'Form', 'Source', 'Time', 'Imported']
+    const rows = leads.map(l => [l.name, l.email, l.phone, l.form, l.source, l.time, l.imported ? 'Yes' : 'No'])
+    const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'meta_leads.csv'; a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Meta leads exported!')
+  }
+
   const totalImported = leads.filter(l => l.imported).length
 
   return (
@@ -151,7 +162,7 @@ export default function Meta() {
               <h2 className="text-sm font-semibold text-slate-900">Meta Ad Leads</h2>
               <p className="text-xs text-slate-500 mt-0.5">{leads.length - totalImported} pending import</p>
             </div>
-            <button className="btn-secondary text-xs py-1.5">
+            <button onClick={exportMetaCSV} className="btn-secondary text-xs py-1.5">
               <Download size={13} /> Export
             </button>
           </div>

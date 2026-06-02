@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
+import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import MainLayout from '../layouts/MainLayout'
 import {
@@ -134,6 +136,33 @@ export default function WhatsApp() {
       }
 
       toast.success('WhatsApp message sent! ✅')
+
+      // Auto-create lead if sending to a new number
+      if (currentUser?.uid) {
+        try {
+          const q = query(collection(db, 'leads'), where('userId', '==', currentUser.uid), where('phone', '==', phone.trim()));
+          const snap = await getDocs(q);
+          if (snap.empty) {
+            await addDoc(collection(db, 'leads'), {
+              fullName: 'Unknown (WhatsApp)',
+              phone: phone.trim(),
+              email: '',
+              companyName: '',
+              leadSource: 'WhatsApp',
+              serviceInterested: 'General',
+              status: 'New',
+              notes: 'Created automatically via WhatsApp outgoing template.',
+              userId: currentUser.uid,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })
+            toast.success('Lead automatically created in CRM!')
+          }
+        } catch (e) {
+          console.error("Failed to auto-create lead", e)
+        }
+      }
+
       setPhone('')
       setMessage('')
       setSelectedTemplate('')

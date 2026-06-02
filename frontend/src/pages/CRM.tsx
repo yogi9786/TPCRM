@@ -837,7 +837,7 @@ function TableView({
           </thead>
           <tbody className="divide-y divide-slate-200">
             {leads.map(lead => (
-              <tr key={lead.id} className={clsx('hover:bg-slate-50 transition-colors group', selectedLeadIds.includes(lead.id) && 'bg-slate-50')}>
+              <tr key={lead.id} className={clsx('hover:bg-slate-50 transition-colors group relative', selectedLeadIds.includes(lead.id) && 'bg-slate-50', openDropdown === lead.id && 'z-[50]')}>
                 <td className="px-4 py-3.5 w-10">
                   <input 
                     type="checkbox" 
@@ -887,7 +887,7 @@ function TableView({
                       <ChevronDown size={11} />
                     </button>
                     {openDropdown === lead.id && (
-                      <div className="absolute z-10 top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1 min-w-[130px]">
+                      <div className="absolute z-[99] top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1 min-w-[130px]">
                         {STATUSES.map(s => (
                           <button
                             key={s}

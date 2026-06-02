@@ -128,22 +128,25 @@ export default function Dashboard() {
 
         {/* KPI Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-          {kpis.map(({ title, value, sub, icon: Icon, gradient, iconColor, border }) => (
-            <div key={title} className={`glass-card p-5 border ${border} hover:scale-[1.02] transition-transform duration-200`}>
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-3`}>
-                <Icon size={18} className={iconColor} />
+          {kpis.map(({ title, value, sub, icon: Icon, gradient, iconColor, border }, i) => {
+            const delays = ['delay-75', 'delay-100', 'delay-150', 'delay-200', 'delay-300', 'delay-300'];
+            return (
+              <div key={title} className={`glass-card p-5 border ${border} hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 animate-slide-up ${delays[i % delays.length]}`}>
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} shadow-sm border border-white/50 flex items-center justify-center mb-4`}>
+                  <Icon size={20} strokeWidth={2.5} className={iconColor} />
+                </div>
+                <p className="text-3xl font-extrabold text-slate-900 font-display tracking-tight">{loading ? '—' : value}</p>
+                <p className="text-sm font-semibold text-slate-600 mt-1 truncate">{title}</p>
+                <p className="text-xs font-medium text-slate-400 truncate mt-0.5">{sub}</p>
               </div>
-              <p className="text-2xl font-bold text-slate-900 font-display">{loading ? '—' : value}</p>
-              <p className="text-xs text-slate-500 mt-1 truncate">{title}</p>
-              <p className="text-xs text-slate-600 truncate">{sub}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6 animate-slide-up delay-200">
           {/* Line chart */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-base font-semibold text-slate-900">Lead Activity</h2>
@@ -170,7 +173,7 @@ export default function Dashboard() {
           </div>
 
           {/* Pie chart */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="mb-5">
               <h2 className="text-base font-semibold text-slate-900">Lead Sources</h2>
               <p className="text-xs text-slate-500">Breakdown by acquisition channel</p>
@@ -195,9 +198,9 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6 animate-slide-up delay-300">
           {/* Recent Leads */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-slate-900">Recent Leads</h2>
               <a href="/crm" className="text-xs text-blue-700 hover:text-sky-300 flex items-center gap-1 transition-colors">
@@ -230,7 +233,7 @@ export default function Dashboard() {
           </div>
 
           {/* Reminders */}
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-5">
               <Bell size={16} className="text-amber-400" />
               <h2 className="text-base font-semibold text-slate-900">Upcoming Reminders</h2>

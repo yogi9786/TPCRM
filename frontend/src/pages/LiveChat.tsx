@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import MainLayout from '../layouts/MainLayout'
 import { 
-  MessageSquare, Send, Phone, User, Bot, Sparkles, 
-  Search, ShieldAlert, Check, RefreshCw, AlertCircle, ToggleLeft, ToggleRight
+  MessageSquare, Send, Phone, User, Bot, Search, ShieldAlert, Check, RefreshCw, AlertCircle, ToggleLeft, ToggleRight, Edit2, Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -32,12 +31,15 @@ export default function LiveChat() {
   
   // Chat modes & automation states
   const [chatMode, setChatMode] = useState<'web' | 'whatsapp'>('web')
-  const [botEnabled, setBotEnabled] = useState(true)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [sending, setSending] = useState(false)
   const [botTyping, setBotTyping] = useState(false)
   
+  // Edit State
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editMessageText, setEditMessageText] = useState('')
+
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // ── Fetch CRM Leads for the sidebar ──────────────────────────────────────
@@ -160,78 +162,41 @@ export default function LiveChat() {
     } catch (err) {
       console.warn('Failed to save to Firestore, using local backup')
     }
+  }
 
-    // Auto-trigger Groq chatbot if bot is enabled and the sender is the client
-    if (botEnabled && sender === 'client') {
-      triggerAIChatbot(newMsg.text, currentList)
+  // ── Edit & Delete Messages ────────────────────────────────────────────────
+  async function saveEditedMessage(msgId: string) {
+    if (!editMessageText.trim()) return
+    try {
+      await updateDoc(doc(db, 'chats', msgId), {
+        text: editMessageText.trim()
+      })
+      
+      // Update local state for immediate feedback or local storage fallback
+      const updatedMessages = messages.map(m => m.id === msgId ? { ...m, text: editMessageText.trim() } : m)
+      setMessages(updatedMessages)
+      if (selectedLead) localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(updatedMessages))
+      
+      setEditingMessageId(null)
+      setEditMessageText('')
+      toast.success('Message updated')
+    } catch (err) {
+      toast.error('Failed to update message')
     }
   }
 
-  // ── Groq AI Auto-responder ────────────────────────────────────────────────
-  async function triggerAIChatbot(userMessage: string, history: ChatMessage[]) {
-    if (!selectedLead || !currentUser) return
-    setBotTyping(true)
-    
+  async function deleteMessage(msgId: string) {
+    if (!confirm('Are you sure you want to delete this message?')) return
     try {
-      const token = await currentUser.getIdToken?.()
+      await deleteDoc(doc(db, 'chats', msgId))
       
-      // Map history to backend format
-      const formattedHistory = history
-        .slice(-6) // Send last 6 messages as context
-        .map(m => ({
-          role: m.sender === 'client' ? 'user' : 'assistant',
-          content: m.text
-        }))
-        
-      const res = await fetch(`${API}/chatbot/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          history: formattedHistory
-        })
-      })
+      const updatedMessages = messages.filter(m => m.id !== msgId)
+      setMessages(updatedMessages)
+      if (selectedLead) localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(updatedMessages))
       
-      if (!res.ok) {
-        throw new Error(`AI Request failed with status ${res.status}`)
-      }
-      
-      const data = await res.json()
-      const aiResponse = data.response || "I'm sorry, I'm having difficulty connecting to my AI processor."
-      
-      // Append AI Message
-      const aiMsg: ChatMessage = {
-        sender: 'bot',
-        text: aiResponse,
-        createdAt: new Date().toISOString(),
-        leadId: selectedLead.id
-      }
-      
-      setMessages(prev => {
-        const updated = [...prev, aiMsg]
-        localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(updated))
-        return updated
-      })
-      
-      // Save to Firestore
-      try {
-        await addDoc(collection(db, 'chats'), {
-          ...aiMsg,
-          userId: currentUser.uid,
-          createdAt: serverTimestamp()
-        })
-      } catch (err) {
-        console.warn('Firestore write failed for AI response, stored locally')
-      }
-      
-    } catch (err: any) {
-      console.error(err)
-      toast.error('AI Chatbot failed to respond. Check backend server and Groq API key.')
-    } finally {
-      setBotTyping(false)
+      toast.success('Message deleted')
+    } catch (err) {
+      toast.error('Failed to delete message')
     }
   }
 
@@ -347,21 +312,6 @@ export default function LiveChat() {
                       WhatsApp Mock
                     </button>
                   </div>
-
-                  {/* AI Autoreply Switch */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                      <Sparkles size={13} className="text-yellow-400" />
-                      AI Auto-Bot
-                    </span>
-                    <button onClick={() => setBotEnabled(!botEnabled)} className="transition-colors">
-                      {botEnabled ? (
-                        <ToggleRight size={26} className="text-emerald-400" />
-                      ) : (
-                        <ToggleLeft size={26} className="text-slate-600" />
-                      )}
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -377,7 +327,7 @@ export default function LiveChat() {
                       <div
                         key={index}
                         className={clsx(
-                          'flex w-full',
+                          'flex w-full group items-start',
                           msg.sender === 'client' ? 'justify-start' : 'justify-end'
                         )}
                       >
@@ -405,8 +355,38 @@ export default function LiveChat() {
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                          {editingMessageId === msg.id ? (
+                            <div className="mt-2 flex flex-col gap-2">
+                              <textarea
+                                value={editMessageText}
+                                onChange={e => setEditMessageText(e.target.value)}
+                                className="w-full text-xs p-2 rounded text-slate-900 border border-slate-300 resize-none"
+                                rows={2}
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <button onClick={() => setEditingMessageId(null)} className="text-[10px] text-slate-500 hover:text-slate-700 font-medium bg-white px-2 py-1 rounded">Cancel</button>
+                                <button onClick={() => msg.id && saveEditedMessage(msg.id)} className="text-[10px] text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-2 py-1 rounded">Save</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                          )}
                         </div>
+
+                        {/* Hover Actions (Edit/Delete) */}
+                        {msg.id && (msg.sender === 'agent' || msg.sender === 'client' || msg.sender === 'bot') && (
+                          <div className={clsx(
+                            'flex flex-col gap-1 mx-2 opacity-0 group-hover:opacity-100 transition-opacity',
+                            msg.sender === 'client' ? 'order-last' : 'order-first'
+                          )}>
+                            <button onClick={() => { setEditingMessageId(msg.id!); setEditMessageText(msg.text) }} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="Edit message">
+                              <Edit2 size={12} />
+                            </button>
+                            <button onClick={() => msg.id && deleteMessage(msg.id)} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-red-500 transition-colors" title="Delete message">
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                     
@@ -471,7 +451,6 @@ export default function LiveChat() {
                   ) : (
                     <span>Conversing as Agent</span>
                   )}
-                  {botEnabled && <span className="text-yellow-400/80">★ AI Auto-Bot active for incoming client texts</span>}
                 </div>
               </div>
             </>
