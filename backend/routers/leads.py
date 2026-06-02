@@ -4,7 +4,8 @@ Lead management router — CRUD operations on Firestore 'leads' collection
 from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 from models.lead import LeadCreate, LeadUpdate, LeadResponse
-from services.firebase_service import get_db, verify_firebase_token
+from services.firebase_service import get_db
+from auth import get_current_user
 from typing import Optional
 from fastapi_cache.decorator import cache
 from fastapi import Request, Response
@@ -17,15 +18,7 @@ def user_cache_key_builder(func, namespace: str = "", request: Request = None, r
 router = APIRouter(prefix="/leads", tags=["leads"])
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
-    """Extract and verify Firebase token from Authorization header."""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization token")
-    token = authorization.split(" ", 1)[1]
-    try:
-        return verify_firebase_token(token)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+
 
 
 @router.get("/", response_model=list[dict])

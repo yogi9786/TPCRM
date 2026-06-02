@@ -7,19 +7,11 @@ import os
 from typing import Optional, List
 
 from groq import Groq
-from services.firebase_service import verify_firebase_token
+from auth import get_current_user
 
 router = APIRouter(prefix="/chatbot", tags=["chatbot"])
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
-    """Extract and verify Firebase token from Authorization header."""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization token")
-    token = authorization.split(" ", 1)[1]
-    try:
-        return verify_firebase_token(token)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+
 
 class ChatMessage(BaseModel):
     role: str
