@@ -8,7 +8,8 @@ import {
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:8000') : 'https://tpcrm.onrender.com';
 
 // Default templates
 const DEFAULT_TEMPLATES = [

@@ -58,8 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
-      
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const apiUrl = isLocalhost 
+        ? (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+        : 'https://tpcrm.onrender.com';
       const formData = new URLSearchParams()
       formData.append('username', email)
       formData.append('password', password)
