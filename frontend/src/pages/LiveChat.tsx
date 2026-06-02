@@ -11,7 +11,7 @@ import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { Lead } from '../types'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
 
 interface ChatMessage {
   id?: string

@@ -17,7 +17,7 @@ export default function Settings() {
     twilioWhatsAppNumber: 'whatsapp:+14155238886',
     metaPageAccessToken: '',
     metaPageId: '',
-    backendUrl: 'http://localhost:4000',
+    backendUrl: 'https://tpcrm.onrender.com',
   })
 
   const [notifConfig, setNotifConfig] = useState({
