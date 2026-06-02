@@ -46,7 +46,7 @@ export default function Settings() {
       <div className="space-y-5 animate-fade-in">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <SettingsIcon className="text-slate-400" size={24} /> Settings
+            <SettingsIcon className="text-slate-500" size={24} /> Settings
           </h1>
           <p className="page-subtitle">Configure API integrations, notifications & security</p>
         </div>
@@ -61,8 +61,8 @@ export default function Settings() {
                 className={clsx(
                   'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all',
                   tab === id
-                    ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-sky-500/10 text-blue-700 border border-sky-500/20'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                 )}
               >
                 <Icon size={15} />
@@ -77,12 +77,12 @@ export default function Settings() {
             {tab === 'api' && (
               <>
                 <div>
-                  <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
                     <Key size={15} className="text-yellow-400" /> Twilio (WhatsApp)
                   </h2>
                   <p className="text-xs text-slate-500 mb-4">
                     Get these from your{' '}
-                    <a href="https://console.twilio.com" target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">
+                    <a href="https://console.twilio.com" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
                       Twilio Console
                     </a>
                   </p>
@@ -97,7 +97,7 @@ export default function Settings() {
                           value={apiConfig.twilioAccountSid}
                           onChange={e => setApiConfig(c => ({ ...c, twilioAccountSid: e.target.value }))}
                         />
-                        <button onClick={() => setShowTwilioSid(!showTwilioSid)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                        <button onClick={() => setShowTwilioSid(!showTwilioSid)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
                           {showTwilioSid ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
@@ -112,7 +112,7 @@ export default function Settings() {
                           value={apiConfig.twilioAuthToken}
                           onChange={e => setApiConfig(c => ({ ...c, twilioAuthToken: e.target.value }))}
                         />
-                        <button onClick={() => setShowTwilioToken(!showTwilioToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                        <button onClick={() => setShowTwilioToken(!showTwilioToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
                           {showTwilioToken ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
@@ -129,13 +129,13 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-800/60 pt-5">
-                  <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                <div className="border-t border-slate-200 pt-5">
+                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
                     <Webhook size={15} className="text-blue-400" /> Meta (Facebook / Instagram)
                   </h2>
                   <p className="text-xs text-slate-500 mb-4">
                     Get these from your{' '}
-                    <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">
+                    <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
                       Meta Developer Console
                     </a>
                   </p>
@@ -150,7 +150,7 @@ export default function Settings() {
                           value={apiConfig.metaPageAccessToken}
                           onChange={e => setApiConfig(c => ({ ...c, metaPageAccessToken: e.target.value }))}
                         />
-                        <button onClick={() => setShowMetaToken(!showMetaToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                        <button onClick={() => setShowMetaToken(!showMetaToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
                           {showMetaToken ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
@@ -167,7 +167,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-800/60 pt-5">
+                <div className="border-t border-slate-200 pt-5">
                   <label className="label">Backend API URL</label>
                   <input
                     className="input-field max-w-sm"
@@ -182,7 +182,7 @@ export default function Settings() {
             {/* Notifications Tab */}
             {tab === 'notifications' && (
               <div className="space-y-5">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                   <Bell size={15} className="text-amber-400" /> Notification Preferences
                 </h2>
                 {[
@@ -191,9 +191,9 @@ export default function Settings() {
                   { key: 'campaignComplete', label: 'Campaign Complete', desc: 'Notify when a broadcast campaign finishes' },
                   { key: 'dailyDigest', label: 'Daily Digest', desc: 'Email summary of daily CRM activity' },
                 ].map(({ key, label, desc }) => (
-                  <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/40 border border-slate-700/40">
+                  <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <div>
-                      <p className="text-sm font-medium text-white">{label}</p>
+                      <p className="text-sm font-medium text-slate-900">{label}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
                     </div>
                     <button
@@ -226,7 +226,7 @@ export default function Settings() {
             {/* Security Tab */}
             {tab === 'security' && (
               <div className="space-y-5">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                   <Shield size={15} className="text-emerald-400" /> Security Settings
                 </h2>
                 <div className="space-y-3">
@@ -237,7 +237,7 @@ export default function Settings() {
                     { label: 'Webhook Signature Validation', status: 'Enabled', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
                   ].map(({ label, status, color, bg }) => (
                     <div key={label} className={`flex items-center justify-between p-4 rounded-xl border ${bg}`}>
-                      <p className="text-sm text-white">{label}</p>
+                      <p className="text-sm text-slate-900">{label}</p>
                       <span className={`text-xs font-semibold ${color}`}>{status}</span>
                     </div>
                   ))}
@@ -251,7 +251,7 @@ export default function Settings() {
             )}
 
             {/* Save Button */}
-            <div className="pt-4 border-t border-slate-800/60">
+            <div className="pt-4 border-t border-slate-200">
               <button onClick={saveSettings} disabled={saving} className="btn-primary">
                 {saving ? (
                   <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Saving...</>

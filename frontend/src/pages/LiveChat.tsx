@@ -250,9 +250,9 @@ export default function LiveChat() {
       <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-5 animate-fade-in">
         
         {/* Left column — Lead Selector */}
-        <div className="w-full md:w-[280px] lg:w-[320px] flex flex-col glass-card border-slate-800/60 overflow-hidden flex-shrink-0">
-          <div className="p-4 border-b border-slate-800/80">
-            <h2 className="text-base font-bold text-white flex items-center gap-2 mb-3">
+        <div className="w-full md:w-[280px] lg:w-[320px] flex flex-col glass-card border-slate-200 overflow-hidden flex-shrink-0">
+          <div className="p-4 border-b border-slate-200">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
               <MessageSquare className="text-blue-400" size={18} />
               Conversations
             </h2>
@@ -273,7 +273,7 @@ export default function LiveChat() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-2 space-y-1">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-200 p-2 space-y-1">
             {filteredLeads.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-xs">
                 No conversations found.
@@ -287,15 +287,15 @@ export default function LiveChat() {
                     'w-full text-left p-3 rounded-xl transition-all flex items-center justify-between gap-3',
                     selectedLead?.id === lead.id
                       ? 'bg-blue-600/20 border border-blue-500/30'
-                      : 'border border-transparent hover:bg-slate-800/50'
+                      : 'border border-transparent hover:bg-slate-50'
                   )}
                 >
                   <div className="min-w-0 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-slate-700/40 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
                       {lead.fullName.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">{lead.fullName}</p>
+                      <p className="text-xs font-semibold text-slate-900 truncate">{lead.fullName}</p>
                       <p className="text-[10px] text-slate-500 truncate">{lead.phone}</p>
                     </div>
                   </div>
@@ -314,34 +314,34 @@ export default function LiveChat() {
         </div>
 
         {/* Right column — Chat window */}
-        <div className="flex-1 flex flex-col glass-card border-slate-800/60 overflow-hidden">
+        <div className="flex-1 flex flex-col glass-card border-slate-200 overflow-hidden">
           {selectedLead ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0 bg-slate-900/30">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0 bg-white/30">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-slate-700/40 flex items-center justify-center text-sm font-bold text-slate-200">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-200">
                     {selectedLead.fullName.charAt(0)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{selectedLead.fullName}</p>
-                    <p className="text-xs text-slate-400 font-mono">{selectedLead.phone}</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">{selectedLead.fullName}</p>
+                    <p className="text-xs text-slate-500 font-mono">{selectedLead.phone}</p>
                   </div>
                 </div>
                 
                 {/* Chat Configs & Automation */}
                 <div className="flex items-center gap-4 flex-wrap">
                   {/* Chat Mode Toggle */}
-                  <div className="flex rounded-lg border border-slate-700 overflow-hidden text-xs bg-slate-900/40">
+                  <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs bg-white/40">
                     <button
                       onClick={() => setChatMode('web')}
-                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'web' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white')}
+                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'web' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:text-slate-900')}
                     >
                       Web Chat
                     </button>
                     <button
                       onClick={() => setChatMode('whatsapp')}
-                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'whatsapp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-400 hover:text-white')}
+                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'whatsapp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-500 hover:text-slate-900')}
                     >
                       WhatsApp Mock
                     </button>
@@ -349,7 +349,7 @@ export default function LiveChat() {
 
                   {/* AI Autoreply Switch */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                       <Sparkles size={13} className="text-yellow-400" />
                       AI Auto-Bot
                     </span>
@@ -383,9 +383,9 @@ export default function LiveChat() {
                         <div
                           className={clsx(
                             'max-w-[70%] rounded-2xl p-3 shadow-lg flex flex-col gap-1',
-                            msg.sender === 'client' && 'bg-slate-800/80 text-slate-100 rounded-tl-none border border-slate-700/30',
-                            msg.sender === 'agent' && 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-tr-none border border-blue-500/20',
-                            msg.sender === 'bot' && 'bg-gradient-to-br from-emerald-600/90 to-teal-600/90 text-white rounded-tl-none border border-emerald-500/20'
+                            msg.sender === 'client' && 'bg-slate-50 text-slate-900 rounded-tl-none border border-slate-200',
+                            msg.sender === 'agent' && 'bg-gradient-to-br from-blue-600 to-indigo-600 text-slate-900 rounded-tr-none border border-blue-200',
+                            msg.sender === 'bot' && 'bg-gradient-to-br from-emerald-600/90 to-teal-600/90 text-slate-900 rounded-tl-none border border-emerald-500/20'
                           )}
                         >
                           <div className="flex items-center justify-between gap-6 text-[10px]">
@@ -421,7 +421,7 @@ export default function LiveChat() {
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 border-t border-slate-800/80 flex-shrink-0 bg-slate-900/40">
+              <div className="p-4 border-t border-slate-200 flex-shrink-0 bg-white/40">
                 <div className="flex gap-2">
                   {/* Simulate customer client sending message */}
                   {chatMode === 'whatsapp' && (
@@ -431,7 +431,7 @@ export default function LiveChat() {
                       className="btn-secondary px-3"
                       title="Simulate customer reply (Trigger AI Bot)"
                     >
-                      <User size={15} className="text-slate-400" />
+                      <User size={15} className="text-slate-500" />
                     </button>
                   )}
                   
@@ -477,7 +477,7 @@ export default function LiveChat() {
           ) : (
             <div className="flex-1 flex flex-col justify-center items-center text-slate-500 p-6 text-center">
               <MessageSquare size={48} className="mb-3 opacity-20" />
-              <p className="font-semibold text-white">No Lead Conversation Selected</p>
+              <p className="font-semibold text-slate-900">No Lead Conversation Selected</p>
               <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
                 Choose an active lead from the list on the left to start a web live chat or inspect WhatsApp history.
               </p>

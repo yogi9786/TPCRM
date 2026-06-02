@@ -68,7 +68,7 @@ export default function Dashboard() {
   ).slice(0, 5)
 
   const kpis = [
-    { title: 'Total Leads', value: stats.total, sub: '+12% this month', icon: Users, gradient: 'from-sky-500/20 to-sky-600/10', iconColor: 'text-sky-400', border: 'border-sky-500/20' },
+    { title: 'Total Leads', value: stats.total, sub: '+12% this month', icon: Users, gradient: 'from-sky-500/20 to-sky-600/10', iconColor: 'text-blue-700', border: 'border-sky-500/20' },
     { title: 'New Leads', value: stats.newLeads, sub: 'Awaiting contact', icon: UserPlus, gradient: 'from-violet-500/20 to-violet-600/10', iconColor: 'text-violet-400', border: 'border-violet-500/20' },
     { title: 'Contacted', value: stats.contacted, sub: 'In progress', icon: MessageCircle, gradient: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400', border: 'border-amber-500/20' },
     { title: 'Conversion', value: `${conversion}%`, sub: `${stats.closed} deals closed`, icon: CheckCircle2, gradient: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400', border: 'border-emerald-500/20' },
@@ -96,30 +96,30 @@ export default function Dashboard() {
           <div className="absolute bottom-0 left-1/2 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <p className="text-xs uppercase tracking-widest text-sky-400 font-semibold mb-2 flex items-center gap-2">
+              <p className="text-xs uppercase tracking-widest text-blue-700 font-semibold mb-2 flex items-center gap-2">
                 <Zap size={12} /> TekhPortal Automation Suite
               </p>
-              <h1 className="text-3xl font-bold font-display text-white">
+              <h1 className="text-3xl font-bold font-display text-slate-900">
                 Welcome back, <span className="text-gradient">Admin</span> 👋
               </h1>
-              <p className="text-slate-400 text-sm mt-2 max-w-lg">
+              <p className="text-slate-500 text-sm mt-2 max-w-lg">
                 Manage leads, automate conversations, and monitor campaigns from your centralized CRM.
               </p>
             </div>
-            <div className="glass-card p-5 min-w-[220px] space-y-3 border-slate-700/40">
-              <p className="text-xs text-slate-400 flex items-center gap-2"><Activity size={12} /> Live Overview</p>
+            <div className="glass-card p-5 min-w-[220px] space-y-3 border-slate-200">
+              <p className="text-xs text-slate-500 flex items-center gap-2"><Activity size={12} /> Live Overview</p>
               <div className="space-y-2.5">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Active Campaigns</span>
-                  <span className="font-semibold text-white">3</span>
+                  <span className="text-slate-500">Active Campaigns</span>
+                  <span className="font-semibold text-slate-900">3</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Conversion Rate</span>
+                  <span className="text-slate-500">Conversion Rate</span>
                   <span className="font-semibold text-emerald-400">{conversion}%</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Total Leads</span>
-                  <span className="font-semibold text-white">{loading ? '—' : stats.total}</span>
+                  <span className="text-slate-500">Total Leads</span>
+                  <span className="font-semibold text-slate-900">{loading ? '—' : stats.total}</span>
                 </div>
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function Dashboard() {
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-3`}>
                 <Icon size={18} className={iconColor} />
               </div>
-              <p className="text-2xl font-bold text-white font-display">{loading ? '—' : value}</p>
+              <p className="text-2xl font-bold text-slate-900 font-display">{loading ? '—' : value}</p>
               <p className="text-xs text-slate-500 mt-1 truncate">{title}</p>
               <p className="text-xs text-slate-600 truncate">{sub}</p>
             </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-semibold text-white">Lead Activity</h2>
+                <h2 className="text-base font-semibold text-slate-900">Lead Activity</h2>
                 <p className="text-xs text-slate-500">New leads vs. contacted this week</p>
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-500">
@@ -172,7 +172,7 @@ export default function Dashboard() {
           {/* Pie chart */}
           <div className="glass-card p-6">
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-white">Lead Sources</h2>
+              <h2 className="text-base font-semibold text-slate-900">Lead Sources</h2>
               <p className="text-xs text-slate-500">Breakdown by acquisition channel</p>
             </div>
             {sourceBreakdown.length > 0 ? (
@@ -199,8 +199,8 @@ export default function Dashboard() {
           {/* Recent Leads */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-white">Recent Leads</h2>
-              <a href="/crm" className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors">
+              <h2 className="text-base font-semibold text-slate-900">Recent Leads</h2>
+              <a href="/crm" className="text-xs text-blue-700 hover:text-sky-300 flex items-center gap-1 transition-colors">
                 View all <ArrowUpRight size={12} />
               </a>
             </div>
@@ -212,13 +212,13 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-1">
                 {recentLeads.map(lead => (
-                  <div key={lead.id} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-slate-800/40 transition-colors">
+                  <div key={lead.id} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-700/40 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
                         {lead.fullName?.charAt(0) ?? '?'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{lead.fullName}</p>
+                        <p className="text-sm font-medium text-slate-900 truncate">{lead.fullName}</p>
                         <p className="text-xs text-slate-500 truncate">{lead.phone} · {lead.leadSource}</p>
                       </div>
                     </div>
@@ -233,7 +233,7 @@ export default function Dashboard() {
           <div className="glass-card p-6">
             <div className="flex items-center gap-2 mb-5">
               <Bell size={16} className="text-amber-400" />
-              <h2 className="text-base font-semibold text-white">Upcoming Reminders</h2>
+              <h2 className="text-base font-semibold text-slate-900">Upcoming Reminders</h2>
             </div>
             <div className="space-y-3">
               {reminders.map((r, i) => (
@@ -246,7 +246,7 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <CalendarClock size={14} className={r.type === 'urgent' ? 'text-red-400' : 'text-amber-400'} />
-                    <p className="text-sm font-medium text-white">{r.name}</p>
+                    <p className="text-sm font-medium text-slate-900">{r.name}</p>
                   </div>
                   <p className="text-xs text-slate-500 ml-5">{r.time}</p>
                 </div>

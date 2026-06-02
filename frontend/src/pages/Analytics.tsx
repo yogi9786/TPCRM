@@ -28,7 +28,7 @@ const serviceData = [
 
 const kpis = [
   { label: 'Total Revenue', value: '₹4.8L', change: '+23%', up: true, color: 'text-emerald-400', border: 'border-emerald-500/20' },
-  { label: 'Avg Deal Size', value: '₹18,500', change: '+8%', up: true, color: 'text-sky-400', border: 'border-sky-500/20' },
+  { label: 'Avg Deal Size', value: '₹18,500', change: '+8%', up: true, color: 'text-blue-700', border: 'border-sky-500/20' },
   { label: 'Response Rate', value: '68%', change: '+12%', up: true, color: 'text-violet-400', border: 'border-violet-500/20' },
   { label: 'Churn Rate', value: '4.2%', change: '-2%', up: false, color: 'text-red-400', border: 'border-red-500/20' },
 ]
@@ -62,7 +62,7 @@ export default function Analytics() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {/* Monthly Leads Trend */}
           <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-white mb-1">Monthly Lead Growth</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-1">Monthly Lead Growth</h2>
             <p className="text-xs text-slate-500 mb-5">Leads vs. messages vs. conversions</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData}>
@@ -78,7 +78,7 @@ export default function Analytics() {
 
           {/* Message Activity */}
           <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-white mb-1">Message Activity</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-1">Message Activity</h2>
             <p className="text-xs text-slate-500 mb-5">WhatsApp messages sent per month</p>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={monthlyData}>
@@ -96,7 +96,7 @@ export default function Analytics() {
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-5">
           {/* Lead Sources Pie */}
           <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-white mb-1">Lead Sources</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-1">Lead Sources</h2>
             <p className="text-xs text-slate-500 mb-5">Where leads are coming from</p>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -111,7 +111,7 @@ export default function Analytics() {
 
           {/* Top Services */}
           <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-white mb-1">Top Services Interested</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-1">Top Services Interested</h2>
             <p className="text-xs text-slate-500 mb-5">Most requested services from leads</p>
             <div className="space-y-4">
               {serviceData.map(({ name, value }) => {
@@ -119,10 +119,10 @@ export default function Analytics() {
                 return (
                   <div key={name}>
                     <div className="flex justify-between text-sm mb-1.5">
-                      <span className="text-slate-300">{name}</span>
-                      <span className="text-slate-400 font-medium">{pct}%</span>
+                      <span className="text-slate-700">{name}</span>
+                      <span className="text-slate-500 font-medium">{pct}%</span>
                     </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-white rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500"
                         style={{ width: `${pct}%` }}

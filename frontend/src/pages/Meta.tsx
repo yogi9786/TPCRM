@@ -103,9 +103,9 @@ export default function Meta() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Leads',      value: leads.length,                                    color: 'text-blue-400',    border: 'border-blue-500/20' },
+            { label: 'Total Leads',      value: leads.length,                                    color: 'text-blue-400',    border: 'border-blue-200' },
             { label: 'Imported to CRM',  value: totalImported,                                   color: 'text-emerald-400', border: 'border-emerald-500/20' },
-            { label: 'Facebook',         value: leads.filter(l => l.source === 'Facebook').length, color: 'text-sky-400',   border: 'border-sky-500/20' },
+            { label: 'Facebook',         value: leads.filter(l => l.source === 'Facebook').length, color: 'text-blue-700',   border: 'border-sky-500/20' },
             { label: 'Instagram',        value: leads.filter(l => l.source === 'Instagram').length, color: 'text-pink-400', border: 'border-pink-500/20' },
           ].map(({ label, value, color, border }) => (
             <div key={label} className={`glass-card p-4 border ${border}`}>
@@ -116,8 +116,8 @@ export default function Meta() {
         </div>
 
         {/* Webhook config */}
-        <div className="glass-card p-5 border border-blue-500/20">
-          <h2 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+        <div className="glass-card p-5 border border-blue-200">
+          <h2 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
             <Zap size={14} className="text-yellow-400" /> Meta Webhook Setup
           </h2>
           <p className="text-xs text-slate-500 mb-4">Add these to your Meta App → Webhooks → Lead Ads subscription</p>
@@ -145,9 +145,9 @@ export default function Meta() {
 
         {/* Leads table */}
         <div className="glass-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
             <div>
-              <h2 className="text-sm font-semibold text-white">Meta Ad Leads</h2>
+              <h2 className="text-sm font-semibold text-slate-900">Meta Ad Leads</h2>
               <p className="text-xs text-slate-500 mt-0.5">{leads.length - totalImported} pending import</p>
             </div>
             <button className="btn-secondary text-xs py-1.5">
@@ -157,27 +157,27 @@ export default function Meta() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-slate-800/60">
+              <thead className="border-b border-slate-200">
                 <tr>
                   {['Name', 'Email', 'Phone', 'Form', 'Source', 'Time', 'Action'].map(h => (
                     <th key={h} className="table-header">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40">
+              <tbody className="divide-y divide-slate-200">
                 {leads.map(lead => (
-                  <tr key={lead.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                     <td className="table-cell">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-pink-500/20 border border-slate-700/40 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-pink-500/20 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
                           {lead.name.charAt(0)}
                         </div>
-                        <span className="font-medium text-white">{lead.name}</span>
+                        <span className="font-medium text-slate-900">{lead.name}</span>
                       </div>
                     </td>
-                    <td className="table-cell text-slate-400">{lead.email}</td>
+                    <td className="table-cell text-slate-500">{lead.email}</td>
                     <td className="table-cell text-blue-400">{lead.phone}</td>
-                    <td className="table-cell text-xs text-slate-400">{lead.form}</td>
+                    <td className="table-cell text-xs text-slate-500">{lead.form}</td>
                     <td className="table-cell">
                       <span className={clsx('badge',
                         lead.source === 'Facebook' ? 'bg-blue-500/15 text-blue-300' : 'bg-pink-500/15 text-pink-300'

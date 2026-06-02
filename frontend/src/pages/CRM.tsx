@@ -435,16 +435,16 @@ export default function CRM() {
           </div>
 
           {/* View toggle */}
-          <div className="flex rounded-xl border border-slate-700/60 overflow-hidden">
+          <div className="flex rounded-xl border border-slate-200 overflow-hidden">
             <button
               onClick={() => setView('table')}
-              className={clsx('px-4 py-2.5 flex items-center gap-2 text-sm font-medium transition-colors', view === 'table' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/60')}
+              className={clsx('px-4 py-2.5 flex items-center gap-2 text-sm font-medium transition-colors', view === 'table' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50')}
             >
               <List size={15} /> Table
             </button>
             <button
               onClick={() => setView('kanban')}
-              className={clsx('px-4 py-2.5 flex items-center gap-2 text-sm font-medium transition-colors', view === 'kanban' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/60')}
+              className={clsx('px-4 py-2.5 flex items-center gap-2 text-sm font-medium transition-colors', view === 'kanban' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50')}
             >
               <LayoutGrid size={15} /> Kanban
             </button>
@@ -474,12 +474,12 @@ export default function CRM() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-lg p-6 space-y-5 animate-slide-up border-slate-700/60">
+          <div className="glass-card w-full max-w-lg p-6 space-y-5 animate-slide-up border-slate-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white font-display">
+              <h2 className="text-lg font-bold text-slate-900 font-display">
                 {editLead ? 'Edit Lead' : 'Add New Lead'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-white transition-colors">
+              <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-900 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -620,13 +620,13 @@ export default function CRM() {
       {/* Import CSV Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-xl p-6 space-y-5 animate-slide-up border-slate-700/60 shadow-2xl relative overflow-hidden">
+          <div className="glass-card w-full max-w-xl p-6 space-y-5 animate-slide-up border-slate-200 shadow-2xl relative overflow-hidden">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
-                <Upload className="text-sky-400" size={18} />
-                <h2 className="text-lg font-bold text-white font-display">
+                <Upload className="text-blue-700" size={18} />
+                <h2 className="text-lg font-bold text-slate-900 font-display">
                   Import Leads from CSV
                 </h2>
               </div>
@@ -637,7 +637,7 @@ export default function CRM() {
                   setParsedLeads([])
                   setImportError(null)
                 }} 
-                className="text-slate-500 hover:text-white transition-colors"
+                className="text-slate-500 hover:text-slate-900 transition-colors"
                 disabled={importing}
               >
                 <X size={20} />
@@ -645,8 +645,8 @@ export default function CRM() {
             </div>
 
             {/* Explanation / Sample Download */}
-            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800/40 text-xs text-slate-400 space-y-2">
-              <p className="font-semibold text-slate-300">CSV Columns Supported:</p>
+            <div className="bg-white/50 rounded-xl p-4 border border-slate-200 text-xs text-slate-500 space-y-2">
+              <p className="font-semibold text-slate-700">CSV Columns Supported:</p>
               <p className="leading-relaxed">
                 <code className="text-sky-300 font-mono">Name</code> (Required), 
                 <code className="text-sky-300 font-mono"> Phone</code> (Required), 
@@ -657,12 +657,12 @@ export default function CRM() {
                 <code className="text-sky-300 font-mono"> Status</code>, 
                 <code className="text-sky-300 font-mono"> Notes</code>
               </p>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-2 gap-2 border-t border-slate-800/40">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-2 gap-2 border-t border-slate-200">
                 <span>Headers must match the names listed above.</span>
                 <button 
                   onClick={downloadSampleCSV} 
                   type="button"
-                  className="text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1.5 transition-colors hover:underline"
+                  className="text-blue-700 hover:text-sky-300 font-semibold flex items-center gap-1.5 transition-colors hover:underline"
                 >
                   <Download size={13} /> Sample CSV Template
                 </button>
@@ -671,27 +671,27 @@ export default function CRM() {
 
             {/* Drag and Drop / Input Area */}
             {!importFile ? (
-              <div className="border-2 border-dashed border-slate-700/60 hover:border-sky-500/50 rounded-xl p-8 flex flex-col items-center justify-center transition-all bg-slate-900/20 cursor-pointer relative group">
+              <div className="border-2 border-dashed border-slate-200 hover:border-sky-500/50 rounded-xl p-8 flex flex-col items-center justify-center transition-all bg-white/20 cursor-pointer relative group">
                 <input 
                   type="file" 
                   accept=".csv"
                   onChange={handleCSVUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
-                <Upload size={32} className="text-slate-500 group-hover:text-sky-400 mb-3 transition-colors duration-250" />
+                <Upload size={32} className="text-slate-500 group-hover:text-blue-700 mb-3 transition-colors duration-250" />
                 <p className="text-sm font-semibold text-slate-200">Select or drag CSV file here</p>
                 <p className="text-xs text-slate-500 mt-1">Supports CSV files up to 5MB</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {/* File info */}
-                <div className="flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-xl p-3.5">
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3.5">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 bg-sky-500/10 rounded-lg flex items-center justify-center text-sky-400 flex-shrink-0">
+                    <div className="w-9 h-9 bg-sky-500/10 rounded-lg flex items-center justify-center text-blue-700 flex-shrink-0">
                       <Upload size={16} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{importFile.name}</p>
+                      <p className="text-sm font-semibold text-slate-900 truncate">{importFile.name}</p>
                       <p className="text-xs text-slate-500">{(importFile.size / 1024).toFixed(1)} KB</p>
                     </div>
                   </div>
@@ -716,7 +716,7 @@ export default function CRM() {
                     <X size={15} className="flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold">Failed to Import</p>
-                      <p className="mt-0.5 text-slate-400">{importError}</p>
+                      <p className="mt-0.5 text-slate-500">{importError}</p>
                     </div>
                   </div>
                 )}
@@ -731,23 +731,23 @@ export default function CRM() {
                     </div>
 
                     {/* Preview Table */}
-                    <div className="border border-slate-800/80 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto">
+                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[160px] overflow-y-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-800/40 text-slate-400 border-b border-slate-800/80">
+                        <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
                           <tr>
-                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Name</th>
-                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Phone</th>
-                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Email</th>
-                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Source</th>
+                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Email</th>
+                            <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Source</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/30 text-slate-300 bg-slate-900/10">
+                        <tbody className="divide-y divide-slate-200 text-slate-700 bg-white/10">
                           {parsedLeads.slice(0, 3).map((lead, idx) => (
-                            <tr key={idx} className="hover:bg-slate-800/20">
-                              <td className="px-3 py-2 font-medium text-white">{lead.fullName}</td>
-                              <td className="px-3 py-2 text-sky-400 font-mono">{lead.phone || '—'}</td>
-                              <td className="px-3 py-2 text-slate-400 truncate max-w-[120px]">{lead.email || '—'}</td>
-                              <td className="px-3 py-2 text-slate-400">{lead.leadSource}</td>
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="px-3 py-2 font-medium text-slate-900">{lead.fullName}</td>
+                              <td className="px-3 py-2 text-blue-700 font-mono">{lead.phone || '—'}</td>
+                              <td className="px-3 py-2 text-slate-500 truncate max-w-[120px]">{lead.email || '—'}</td>
+                              <td className="px-3 py-2 text-slate-500">{lead.leadSource}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -759,7 +759,7 @@ export default function CRM() {
             )}
 
             {/* Actions */}
-            <div className="flex gap-3 justify-end border-t border-slate-800/60 pt-4">
+            <div className="flex gap-3 justify-end border-t border-slate-200 pt-4">
               <button 
                 onClick={() => {
                   setShowImportModal(false)
@@ -820,63 +820,63 @@ function TableView({
     <div className="glass-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-800/80">
+          <thead className="border-b border-slate-200">
             <tr>
               <th className="px-4 py-3.5 text-left w-10">
                 <input 
                   type="checkbox" 
                   checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
                   onChange={onToggleSelectAll}
-                  className="rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                  className="rounded border-slate-200 bg-white text-blue-500 focus:ring-blue-500/20 cursor-pointer"
                 />
               </th>
               {['Name', 'Phone', 'Email', 'Source', 'Service', 'Status', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                <th key={h} className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/40">
+          <tbody className="divide-y divide-slate-200">
             {leads.map(lead => (
-              <tr key={lead.id} className={clsx('hover:bg-slate-800/30 transition-colors group', selectedLeadIds.includes(lead.id) && 'bg-slate-800/20')}>
+              <tr key={lead.id} className={clsx('hover:bg-slate-50 transition-colors group', selectedLeadIds.includes(lead.id) && 'bg-slate-50')}>
                 <td className="px-4 py-3.5 w-10">
                   <input 
                     type="checkbox" 
                     checked={selectedLeadIds.includes(lead.id)}
                     onChange={() => onToggleSelect(lead.id)}
-                    className="rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                    className="rounded border-slate-200 bg-white text-blue-500 focus:ring-blue-500/20 cursor-pointer"
                   />
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-700/40 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
                       {lead.fullName?.charAt(0) ?? '?'}
                     </div>
                     <div>
-                      <p className="font-medium text-white">{lead.fullName}</p>
+                      <p className="font-medium text-slate-900">{lead.fullName}</p>
                       {lead.companyName && <p className="text-xs text-slate-500">{lead.companyName}</p>}
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3.5">
-                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 transition-colors">
+                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-blue-700 hover:text-sky-300 transition-colors">
                     <Phone size={13} />
                     {lead.phone}
                   </a>
                 </td>
                 <td className="px-4 py-3.5">
                   {lead.email ? (
-                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-400 hover:text-sky-400 transition-colors truncate max-w-[180px]">
+                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-500 hover:text-blue-700 transition-colors truncate max-w-[180px]">
                       <Mail size={13} />
                       {lead.email}
                     </a>
                   ) : <span className="text-slate-600">—</span>}
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800/60 text-slate-300">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-700">
                     {lead.leadSource}
                   </span>
                 </td>
-                <td className="px-4 py-3.5 text-slate-400 max-w-[160px] truncate">{lead.serviceInterested || '—'}</td>
+                <td className="px-4 py-3.5 text-slate-500 max-w-[160px] truncate">{lead.serviceInterested || '—'}</td>
                 <td className="px-4 py-3.5">
                   <div className="relative">
                     <button
@@ -887,12 +887,12 @@ function TableView({
                       <ChevronDown size={11} />
                     </button>
                     {openDropdown === lead.id && (
-                      <div className="absolute z-10 top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 min-w-[130px]">
+                      <div className="absolute z-10 top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1 min-w-[130px]">
                         {STATUSES.map(s => (
                           <button
                             key={s}
                             onClick={() => { onStatusChange(lead.id, s); setOpenDropdown(null) }}
-                            className="w-full text-left px-3.5 py-2 text-xs text-slate-300 hover:bg-slate-700 transition-colors"
+                            className="w-full text-left px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-700 transition-colors"
                           >
                             {s}
                           </button>
@@ -912,7 +912,7 @@ function TableView({
                     >
                       <MessageCircle size={15} />
                     </a>
-                    <button onClick={() => onEdit(lead)} className="p-1.5 rounded-lg text-sky-400 hover:bg-sky-500/10 transition-colors" title="Edit">
+                    <button onClick={() => onEdit(lead)} className="p-1.5 rounded-lg text-blue-700 hover:bg-sky-500/10 transition-colors" title="Edit">
                       <Edit3 size={15} />
                     </button>
                     <button onClick={() => onDelete(lead.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
@@ -955,25 +955,25 @@ function KanbanView({ leads, onEdit, onDelete, onStatusChange }: {
                 </div>
               )}
               {colLeads.map(lead => (
-                <div key={lead.id} className="bg-slate-800/60 border border-slate-700/40 rounded-xl p-3.5 space-y-2 hover:border-slate-600/60 transition-colors cursor-pointer group">
+                <div key={lead.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 hover:border-slate-300 transition-colors cursor-pointer group">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-white leading-tight">{lead.fullName}</p>
+                    <p className="text-sm font-semibold text-slate-900 leading-tight">{lead.fullName}</p>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button onClick={() => onEdit(lead)} className="p-1 rounded text-sky-400 hover:bg-sky-500/10"><Edit3 size={12} /></button>
+                      <button onClick={() => onEdit(lead)} className="p-1 rounded text-blue-700 hover:bg-sky-500/10"><Edit3 size={12} /></button>
                       <button onClick={() => onDelete(lead.id)} className="p-1 rounded text-red-400 hover:bg-red-500/10"><Trash2 size={12} /></button>
                     </div>
                   </div>
                   {lead.companyName && <p className="text-xs text-slate-500">{lead.companyName}</p>}
-                  <p className="text-xs text-sky-400">{lead.phone}</p>
+                  <p className="text-xs text-blue-700">{lead.phone}</p>
                   <p className="text-xs text-slate-500 truncate">{lead.serviceInterested}</p>
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] text-slate-600 inline-flex items-center px-2 py-0.5 rounded-full bg-slate-800/60 border border-slate-700/40">{lead.leadSource}</span>
+                    <span className="text-[10px] text-slate-600 inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">{lead.leadSource}</span>
                     <div className="flex gap-1">
                       {STATUSES.filter(s => s !== lead.status && s !== 'Lost').map(s => (
                         <button
                           key={s}
                           onClick={() => onStatusChange(lead.id, s)}
-                          className="text-[10px] text-slate-400 hover:text-sky-400 transition-colors"
+                          className="text-[10px] text-slate-500 hover:text-blue-700 transition-colors"
                           title={`Move to ${s}`}
                         >
                           →{s.charAt(0)}

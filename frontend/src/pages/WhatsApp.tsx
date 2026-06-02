@@ -184,7 +184,7 @@ export default function WhatsApp() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Messages Sent',    value: outbound.length,  color: 'text-blue-400',    border: 'border-blue-500/20',    icon: Send },
+            { label: 'Messages Sent',    value: outbound.length,  color: 'text-blue-400',    border: 'border-blue-200',    icon: Send },
             { label: 'Delivered',        value: delivered.length, color: 'text-emerald-400', border: 'border-emerald-500/20', icon: CheckCheck },
             { label: 'Contacts Reached', value: contacts,         color: 'text-violet-400',  border: 'border-violet-500/20',  icon: Users },
           ].map(({ label, value, color, border, icon: Icon }) => (
@@ -197,7 +197,7 @@ export default function WhatsApp() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-slate-800/60">
+        <div className="flex gap-1 border-b border-slate-200">
           {(['send', 'logs', 'automation'] as const).map(t => (
             <button
               key={t}
@@ -206,7 +206,7 @@ export default function WhatsApp() {
                 'px-4 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px',
                 tab === t
                   ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-slate-400 hover:text-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               )}
             >
               {t === 'send' ? 'Send Message' : t === 'logs' ? 'Message Logs' : 'Auto Reply'}
@@ -250,7 +250,7 @@ export default function WhatsApp() {
                               if (selectedTemplate === t.id) setSelectedTemplate('')
                             }
                           }}
-                          className="text-slate-400 hover:text-red-500"
+                          className="text-slate-500 hover:text-red-500"
                         >
                           <AlertCircle size={13} />
                         </button>
@@ -264,7 +264,7 @@ export default function WhatsApp() {
 
             {/* Compose */}
             <div className="glass-card p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                 <Send size={14} className="text-blue-400" /> Compose &amp; Send
               </h2>
 
@@ -331,8 +331,8 @@ export default function WhatsApp() {
         {/* ── LOGS TAB ───────────────────────────────────── */}
         {tab === 'logs' && (
           <div className="glass-card overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-              <h2 className="text-sm font-semibold text-white">Message History</h2>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+              <h2 className="text-sm font-semibold text-slate-900">Message History</h2>
               <button onClick={fetchLogs} className="btn-secondary text-xs py-1.5 px-3">
                 <RefreshCw size={13} className={loadingLogs ? 'animate-spin' : ''} /> Refresh
               </button>
@@ -351,16 +351,16 @@ export default function WhatsApp() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-slate-800/60">
+                  <thead className="border-b border-slate-200">
                     <tr>
                       {['Phone', 'Message', 'Direction', 'Status', 'Time'].map(h => (
                         <th key={h} className="table-header">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/40">
+                  <tbody className="divide-y divide-slate-200">
                     {messages.map((msg: any) => (
-                      <tr key={msg.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={msg.id} className="hover:bg-slate-50 transition-colors">
                         <td className="table-cell text-blue-400 font-medium">{msg.phone}</td>
                         <td className="table-cell max-w-[260px] truncate">{msg.body}</td>
                         <td className="table-cell">
@@ -373,7 +373,7 @@ export default function WhatsApp() {
                         <td className="table-cell">
                           <span className="flex items-center gap-1.5">
                             {statusIcon(msg.status)}
-                            <span className="text-xs text-slate-400 capitalize">{msg.status}</span>
+                            <span className="text-xs text-slate-500 capitalize">{msg.status}</span>
                           </span>
                         </td>
                         <td className="table-cell text-slate-500 text-xs">
@@ -391,11 +391,11 @@ export default function WhatsApp() {
         {/* ── AUTO REPLY TAB ─────────────────────────────── */}
         {tab === 'automation' && (
           <div className="glass-card p-6 space-y-5 max-w-2xl">
-            <h2 className="text-base font-semibold text-white">Auto-Reply Settings</h2>
+            <h2 className="text-base font-semibold text-slate-900">Auto-Reply Settings</h2>
 
-            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/40">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
               <div>
-                <p className="text-sm font-medium text-white">Enable Auto Reply</p>
+                <p className="text-sm font-medium text-slate-900">Enable Auto Reply</p>
                 <p className="text-xs text-slate-500 mt-0.5">Automatically respond to incoming WhatsApp messages</p>
               </div>
               <button onClick={() => setAutoReply(!autoReply)} className="transition-colors">
@@ -431,7 +431,7 @@ export default function WhatsApp() {
 
       {/* Create Template Modal */}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/40 backdrop-blur-sm animate-fade-in">
           <div className="glass-card w-full max-w-md p-6 space-y-5 animate-slide-up border-slate-200">
             <h2 className="text-lg font-bold text-slate-900">Create New Template</h2>
             <div>

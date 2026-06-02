@@ -5,7 +5,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, MessageCircle, Share2, BarChart3, 
 import toast from 'react-hot-toast'
 
 const features = [
-  { icon: Users,         label: 'Lead Management',      sub: 'Centralise and track every lead', color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20' },
+  { icon: Users,         label: 'Lead Management',      sub: 'Centralise and track every lead', color: 'text-blue-400',   bg: 'bg-blue-50',   border: 'border-blue-200' },
   { icon: MessageCircle, label: 'WhatsApp Automation',  sub: 'Send campaigns at scale',         color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   { icon: Share2,        label: 'Meta Ads Integration', sub: 'Capture leads from Facebook & IG', color: 'text-violet-400', bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
   { icon: BarChart3,     label: 'Real-time Analytics',  sub: 'Insights that drive decisions',   color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20' },
@@ -73,16 +73,16 @@ export default function Login() {
 
           {/* Headline */}
           <div className="py-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
               <span className="text-xs font-semibold text-blue-400 tracking-wider uppercase">All-in-one CRM Platform</span>
             </div>
 
-            <h1 className="text-4xl font-bold text-white leading-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h1 className="text-4xl font-bold text-slate-900 leading-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Grow faster with<br />
               <span className="text-gradient">smarter tools</span>
             </h1>
-            <p className="text-slate-400 text-base leading-relaxed max-w-md">
+            <p className="text-slate-500 text-base leading-relaxed max-w-md">
               Manage your leads, automate WhatsApp campaigns, capture Meta Ads data, and make decisions backed by real analytics.
             </p>
 
@@ -93,7 +93,7 @@ export default function Login() {
                   <div className={`w-8 h-8 rounded-xl ${bg} border ${border} flex items-center justify-center`}>
                     <Icon size={15} className={color} />
                   </div>
-                  <p className="text-sm font-semibold text-white leading-tight">{label}</p>
+                  <p className="text-sm font-semibold text-slate-900 leading-tight">{label}</p>
                   <p className="text-xs text-slate-500">{sub}</p>
                 </div>
               ))}
@@ -119,7 +119,7 @@ export default function Login() {
       </div>
 
       {/* ── Right panel — Login Form ───────────────── */}
-      <div className="flex-1 lg:max-w-[480px] flex items-center justify-center px-6 py-12 bg-slate-950/50 border-l border-slate-800/40">
+      <div className="flex-1 lg:max-w-[480px] flex items-center justify-center px-6 py-12 bg-slate-950/50 border-l border-slate-200">
         <div className="w-full max-w-sm animate-slide-up">
 
           {/* Mobile logo */}
@@ -130,15 +130,15 @@ export default function Login() {
               className="h-8 w-auto object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
-            <span className="font-bold text-white text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>TekhPortal</span>
+            <span className="font-bold text-slate-900 text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>TekhPortal</span>
           </div>
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Sign in to your account
             </h2>
-            <p className="text-sm text-slate-400">Enter your admin credentials to access the dashboard</p>
+            <p className="text-sm text-slate-500">Enter your admin credentials to access the dashboard</p>
           </div>
 
           {/* Form */}
@@ -180,7 +180,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}

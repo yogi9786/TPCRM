@@ -161,6 +161,42 @@
       "status": "sent",
       "twilioSid": "SMb4843a6bbbac63ddf775c066080714a4",
       "createdAt": "2026-06-01T11:27:43.702797"
+    },
+    "eb7bb055-2b6b-4e58-9f81-9e455d334ace": {
+      "leadId": "",
+      "phone": "9844199344",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T16:17:53.922850"
+    },
+    "455eab29-f124-48a9-9a0d-557c7705c78e": {
+      "leadId": "",
+      "phone": "+91 9844199344",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T16:18:08.113344"
+    },
+    "9cde42da-143d-4ecc-b52d-1018389bb631": {
+      "leadId": "",
+      "phone": "+91 9844199344",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "failed",
+      "twilioSid": null,
+      "createdAt": "2026-06-01T16:19:56.555276"
+    },
+    "0080c667-208a-4c98-b8a0-f87f680a87f9": {
+      "leadId": "",
+      "phone": "+91 9844199344",
+      "direction": "outbound",
+      "body": "hi",
+      "status": "sent",
+      "twilioSid": "SM1823aeb9cf2654ec57d51aee739f8f34",
+      "createdAt": "2026-06-01T16:22:53.104408"
     }
   },
   "test": {

@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
 
 const STATUS_STYLE: Record<string, string> = {
-  draft: 'bg-slate-700/50 text-slate-300',
+  draft: 'bg-slate-700/50 text-slate-700',
   running: 'bg-sky-500/15 text-sky-300',
   completed: 'bg-emerald-500/15 text-emerald-300',
   failed: 'bg-red-500/15 text-red-300',
@@ -92,7 +92,7 @@ export default function Campaigns() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total Campaigns', value: campaigns.length, color: 'text-orange-400', border: 'border-orange-500/20' },
-            { label: 'Running', value: campaigns.filter(c => c.status === 'running').length, color: 'text-sky-400', border: 'border-sky-500/20' },
+            { label: 'Running', value: campaigns.filter(c => c.status === 'running').length, color: 'text-blue-700', border: 'border-sky-500/20' },
             { label: 'Completed', value: campaigns.filter(c => c.status === 'completed').length, color: 'text-emerald-400', border: 'border-emerald-500/20' },
             { label: 'Total Sent', value: campaigns.reduce((a, c) => a + (c.sentCount || 0), 0), color: 'text-violet-400', border: 'border-violet-500/20' },
           ].map(({ label, value, color, border }) => (
@@ -121,12 +121,12 @@ export default function Campaigns() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <p className="font-semibold text-white">{c.name}</p>
+                      <p className="font-semibold text-slate-900">{c.name}</p>
                       <span className={clsx('inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium', STATUS_STYLE[c.status] || STATUS_STYLE.draft)}>
                         {c.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 truncate mb-3">{c.message}</p>
+                    <p className="text-xs text-slate-500 truncate mb-3">{c.message}</p>
                     <div className="flex items-center gap-4 text-xs text-slate-500">
                       <span className="flex items-center gap-1"><Users size={12} /> {c.targetCount} targets</span>
                       <span className="flex items-center gap-1"><Send size={12} /> {c.sentCount} sent</span>
@@ -138,7 +138,7 @@ export default function Campaigns() {
                           <span>Delivery rate</span>
                           <span>{c.targetCount > 0 ? Math.round((c.deliveredCount / c.sentCount) * 100) : 0}%</span>
                         </div>
-                        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-white rounded-full overflow-hidden">
                           <div
                             className="h-full bg-emerald-500 rounded-full transition-all"
                             style={{ width: `${c.targetCount > 0 ? (c.deliveredCount / c.sentCount) * 100 : 0}%` }}
@@ -177,10 +177,10 @@ export default function Campaigns() {
       {/* Create Campaign Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 space-y-4 border-slate-700/60">
+          <div className="glass-card w-full max-w-md p-6 space-y-4 border-slate-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">New Campaign</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-white transition-colors">
+              <h2 className="text-lg font-bold text-slate-900">New Campaign</h2>
+              <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-900 transition-colors">
                 <X size={20} />
               </button>
             </div>
