@@ -15,6 +15,6 @@ META_APP_SECRET = os.getenv("META_APP_SECRET", "")
 META_PAGE_ACCESS_TOKEN = os.getenv("META_PAGE_ACCESS_TOKEN", "")
 META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "tekhportal_verify_2024")
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://tpcrm.netlify.app").split(",")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
