@@ -2,13 +2,14 @@
 TekhPortal CRM — FastAPI Backend
 Main application entry point
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 
 from config import ALLOWED_ORIGINS
 from routers import leads, whatsapp, meta, campaigns, chatbot
+from auth import router as auth_router, get_current_user
 
 # Configure logging
 logging.basicConfig(
@@ -53,38 +54,17 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(leads.router)
-app.include_router(whatsapp.router)
-app.include_router(meta.router)
-app.include_router(campaigns.router)
-app.include_router(chatbot.router)
+# Include auth router FIRST (not protected by get_current_user)
+app.include_router(auth_router)
 
-from pydantic import BaseModel
-import os
-from fastapi import HTTPException
+# Protect all other routers with JWT authentication
+app.include_router(leads.router, dependencies=[Depends(get_current_user)])
+app.include_router(whatsapp.router, dependencies=[Depends(get_current_user)])
+app.include_router(meta.router, dependencies=[Depends(get_current_user)])
+app.include_router(campaigns.router, dependencies=[Depends(get_current_user)])
+app.include_router(chatbot.router, dependencies=[Depends(get_current_user)])
 
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-@app.post("/auth/login")
-async def login_endpoint(credentials: LoginRequest):
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@tekhportal.com")
-    admin_password = os.getenv("ADMIN_PASSWORD", "Admin@123")
-    
-    if credentials.email == admin_email and credentials.password == admin_password:
-        return {
-            "token": "mock-jwt-token-xyz",
-            "user": {
-                "uid": "demo-admin-uid",
-                "email": admin_email,
-                "displayName": "Demo Admin"
-            }
-        }
-    raise HTTPException(status_code=400, detail="Invalid email or password")
-
-
-
+# Mock auth logic removed (now in auth.py)
 @app.get("/", tags=["health"])
 async def root():
     return {

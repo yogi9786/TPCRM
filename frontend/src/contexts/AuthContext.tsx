@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { User as FirebaseUser, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth'
 import { auth } from '../firebase'
 
 interface AuthContextType {
@@ -48,33 +48,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
-      const response = await fetch(`${apiUrl}/auth/login`, {
+      
+      const formData = new URLSearchParams()
+      formData.append('username', email)
+      formData.append('password', password)
+
+      const response = await fetch(`${apiUrl}/auth/token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
       })
+
       if (response.ok) {
         const data = await response.json()
         const mockUser = {
           ...data.user,
-          getIdToken: async () => data.token
+          getIdToken: async () => data.access_token
         }
-        localStorage.setItem('token', data.token)
+        
+        localStorage.setItem('token', data.access_token)
         localStorage.setItem('user', JSON.stringify(data.user))
         setCurrentUser(mockUser)
+        
+        // Log into Firebase using the custom token so Firestore works
+        if (data.firebase_token) {
+          try {
+            await signInWithCustomToken(auth, data.firebase_token)
+          } catch (fbErr) {
+            console.error('Firebase custom auth failed:', fbErr)
+          }
+        }
+        
         return
       } else {
         const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Login failed')
-      }
-    } catch (e: any) {
-      if (e.message === 'Invalid email or password') {
-        const fbError = new Error('Invalid email or password')
+        const fbError = new Error(errData.detail || 'Login failed')
         ;(fbError as any).code = 'auth/invalid-credential'
         throw fbError
       }
-      // Fallback to real Firebase Auth
-      await signInWithEmailAndPassword(auth, email, password)
+    } catch (e: any) {
+      if (!e.code) {
+        e.code = 'auth/invalid-credential'
+        e.message = 'Invalid email or password'
+      }
+      throw e
     }
   }
 
