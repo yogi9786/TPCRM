@@ -236,7 +236,7 @@ export default function Email() {
     // Find all events for this message
     const events = brevoLogs.filter((log: any) => log.messageId === email.brevoMessageId);
     if (!events.length) return email;
-    
+
     // Determine highest priority status
     const eventTypes = events.map((e: any) => e.event);
     let newStatus = email.status;
@@ -244,7 +244,7 @@ export default function Email() {
     else if (eventTypes.includes('spam') || eventTypes.includes('invalid')) newStatus = 'failed';
     else if (eventTypes.includes('opened') || eventTypes.includes('clicks')) newStatus = 'opened';
     else if (eventTypes.includes('delivered')) newStatus = 'delivered';
-    
+
     return { ...email, status: newStatus };
   });
 
@@ -354,8 +354,8 @@ export default function Email() {
                   <thead className="border-b border-slate-200 bg-slate-50">
                     <tr>
                       <th className="px-4 py-3.5 text-left w-10">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
                           onChange={() => {
                             if (leads.every(l => selectedLeadIds.includes(l.id))) {
@@ -377,8 +377,8 @@ export default function Email() {
                     {leads.filter(l => (l.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (l.email || '').toLowerCase().includes(searchQuery.toLowerCase())).map(lead => (
                       <tr key={lead.id} className={clsx('hover:bg-white/40 transition-colors', selectedLeadIds.includes(lead.id) && 'bg-blue-50/30')}>
                         <td className="px-4 py-3 w-10">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={selectedLeadIds.includes(lead.id)}
                             onChange={() => {
                               setSelectedLeadIds(prev => prev.includes(lead.id) ? prev.filter(x => x !== lead.id) : [...prev, lead.id])
@@ -706,15 +706,15 @@ export default function Email() {
             </div>
             <div>
               <label className="label">Full Name</label>
-              <input type="text" className="input-field" value={editLeadForm.fullName} onChange={e => setEditLeadForm({...editLeadForm, fullName: e.target.value})} />
+              <input type="text" className="input-field" value={editLeadForm.fullName} onChange={e => setEditLeadForm({ ...editLeadForm, fullName: e.target.value })} />
             </div>
             <div>
               <label className="label">Email</label>
-              <input type="email" className="input-field" value={editLeadForm.email} onChange={e => setEditLeadForm({...editLeadForm, email: e.target.value})} />
+              <input type="email" className="input-field" value={editLeadForm.email} onChange={e => setEditLeadForm({ ...editLeadForm, email: e.target.value })} />
             </div>
             <div>
               <label className="label">Phone</label>
-              <input type="text" className="input-field" value={editLeadForm.phone} onChange={e => setEditLeadForm({...editLeadForm, phone: e.target.value})} />
+              <input type="text" className="input-field" value={editLeadForm.phone} onChange={e => setEditLeadForm({ ...editLeadForm, phone: e.target.value })} />
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowEditLead(false)} className="btn-secondary">Cancel</button>
