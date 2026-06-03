@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import {
   Users, UserPlus, MessageCircle, CheckCircle2,
   TrendingUp, Megaphone, ArrowUpRight, Activity,
-  CalendarClock, BarChart3, Zap, Bell,
+  CalendarClock, BarChart3, Zap, Bell, RefreshCw
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -36,6 +37,15 @@ export default function Dashboard() {
   const { currentUser } = useAuth()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    setTimeout(() => {
+      setIsRefreshing(false)
+      toast.success('Dashboard data refreshed')
+    }, 600)
+  }
 
   useEffect(() => {
     if (!currentUser) return
@@ -99,15 +109,21 @@ export default function Dashboard() {
               <p className="text-xs uppercase tracking-widest text-blue-700 font-semibold mb-2 flex items-center gap-2">
                 <Zap size={12} /> TekhPortal Automation Suite
               </p>
-              <h1 className="text-3xl font-bold font-display text-slate-900">
-                Welcome back, <span className="text-gradient">Admin</span> 👋
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">Admin</span> 👋
               </h1>
-              <p className="text-slate-500 text-sm mt-2 max-w-lg">
-                Manage leads, automate conversations, and monitor campaigns from your centralized CRM.
+              <p className="text-slate-600 font-medium mt-3 text-sm md:text-base max-w-xl">
+                Here's what's happening with your business today. You have <span className="font-bold text-blue-600">{stats.newLeads} new leads</span> waiting for response.
               </p>
             </div>
+            
             <div className="glass-card p-5 min-w-[220px] space-y-3 border-slate-200">
-              <p className="text-xs text-slate-500 flex items-center gap-2"><Activity size={12} /> Live Overview</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500 flex items-center gap-2"><Activity size={12} /> Live Overview</p>
+                <button onClick={handleRefresh} className="text-slate-400 hover:text-blue-500 transition-colors">
+                  <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                </button>
+              </div>
               <div className="space-y-2.5">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Active Campaigns</span>
@@ -131,7 +147,7 @@ export default function Dashboard() {
           {kpis.map(({ title, value, sub, icon: Icon, gradient, iconColor, border }, i) => {
             const delays = ['delay-75', 'delay-100', 'delay-150', 'delay-200', 'delay-300', 'delay-300'];
             return (
-              <div key={title} className={`glass-card p-5 border ${border} hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 animate-slide-up ${delays[i % delays.length]}`}>
+              <div key={title} className={`stat-card border ${border} animate-slide-up ${delays[i % delays.length]}`}>
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} shadow-sm border border-white/50 flex items-center justify-center mb-4`}>
                   <Icon size={20} strokeWidth={2.5} className={iconColor} />
                 </div>

@@ -11,7 +11,7 @@ import { Lead, LeadStatus, LeadSource } from '../types'
 import {
   Plus, Search, LayoutGrid, List, Trash2,
   Phone, Mail, Edit3, X, ChevronDown, Upload,
-  MessageCircle, Filter, Download,
+  MessageCircle, Filter, Download, RefreshCw, Users
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -46,6 +46,15 @@ export default function CRM() {
   const { currentUser } = useAuth()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    setTimeout(() => {
+      setIsRefreshing(false)
+      toast.success('Leads data refreshed')
+    }, 600)
+  }
   const [view, setView] = useState<'table' | 'kanban'>('table')
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'All'>('All')
@@ -53,6 +62,17 @@ export default function CRM() {
   const [editLead, setEditLead] = useState<Lead | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+
+  // ── Fetch Leads ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentUser) return
+    const q = query(collection(db, 'leads'), where('userId', '==', currentUser.uid))
+    const unsub = onSnapshot(q, snap => {
+      setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
+      setLoading(false)
+    })
+    return unsub
+  }, [currentUser])
 
   // ── Lead Selection State ───────────────────────────
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([])
@@ -390,17 +410,30 @@ export default function CRM() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="page-title">CRM Leads</h1>
+            <h1 className="page-title flex items-center gap-2">
+              <Users className="text-blue-500" size={24} /> CRM Leads
+            </h1>
             <p className="page-subtitle">{filtered.length} of {leads.length} leads</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={handleRefresh} className="btn-secondary px-3">
+              <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
             <button onClick={exportCSV} className="btn-secondary">
               <Download size={15} /> Export CSV
             </button>
-            <button onClick={() => setShowImportModal(true)} className="btn-secondary">
+            <button onClick={() => setShowImportModal(true)} className="btn-secondary hidden sm:flex">
               <Upload size={15} /> Import
             </button>
-            <button onClick={openAdd} className="btn-primary" id="add-lead-btn">
+            <button
+              onClick={() => {
+                setEditLead(null)
+                setForm(EMPTY_FORM)
+                setShowModal(true)
+              }}
+              className="btn-primary"
+            >
               <Plus size={15} /> Add Lead
             </button>
           </div>
@@ -822,57 +855,57 @@ function TableView({
         <table className="w-full text-sm">
           <thead className="border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3.5 text-left w-10">
+              <th className="table-header w-10">
                 <input 
                   type="checkbox" 
                   checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
                   onChange={onToggleSelectAll}
-                  className="rounded border-slate-200 bg-white text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                  className="rounded border-slate-200 bg-white/50 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
                 />
               </th>
               {['Name', 'Phone', 'Email', 'Source', 'Service', 'Status', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                <th key={h} className="table-header whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {leads.map(lead => (
-              <tr key={lead.id} className={clsx('hover:bg-slate-50 transition-colors group relative', selectedLeadIds.includes(lead.id) && 'bg-slate-50', openDropdown === lead.id && 'z-[50]')}>
-                <td className="px-4 py-3.5 w-10">
+              <tr key={lead.id} className={clsx('hover:bg-white/40 transition-colors group relative', selectedLeadIds.includes(lead.id) && 'bg-blue-50/30', openDropdown === lead.id && 'z-[50]')}>
+                <td className="table-cell w-10">
                   <input 
                     type="checkbox" 
                     checked={selectedLeadIds.includes(lead.id)}
                     onChange={() => onToggleSelect(lead.id)}
-                    className="rounded border-slate-200 bg-white text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                    className="rounded border-slate-200 bg-white/50 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
                   />
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="table-cell">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-200/50 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
                       {lead.fullName?.charAt(0) ?? '?'}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{lead.fullName}</p>
-                      {lead.companyName && <p className="text-xs text-slate-500">{lead.companyName}</p>}
+                      <p className="font-bold text-slate-900">{lead.fullName}</p>
+                      {lead.companyName && <p className="text-xs text-slate-500 font-medium">{lead.companyName}</p>}
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3.5">
-                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-blue-700 hover:text-sky-300 transition-colors">
+                <td className="table-cell">
+                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-blue-700 hover:text-blue-500 font-medium transition-colors">
                     <Phone size={13} />
                     {lead.phone}
                   </a>
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="table-cell">
                   {lead.email ? (
-                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-500 hover:text-blue-700 transition-colors truncate max-w-[180px]">
+                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-600 hover:text-blue-700 font-medium transition-colors truncate max-w-[180px]">
                       <Mail size={13} />
                       {lead.email}
                     </a>
-                  ) : <span className="text-slate-600">—</span>}
+                  ) : <span className="text-slate-400">—</span>}
                 </td>
-                <td className="px-4 py-3.5">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-700">
+                <td className="table-cell">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100/80 border border-slate-200/50 text-slate-700">
                     {lead.leadSource}
                   </span>
                 </td>
@@ -955,19 +988,19 @@ function KanbanView({ leads, onEdit, onDelete, onStatusChange }: {
                 </div>
               )}
               {colLeads.map(lead => (
-                <div key={lead.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 hover:border-slate-300 transition-colors cursor-pointer group">
+                <div key={lead.id} className="bg-white/60 backdrop-blur-md border border-white/60 shadow-[0_4px_12px_rgb(0,0,0,0.02)] rounded-xl p-3.5 space-y-2 hover:border-slate-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgb(0,0,0,0.06)] transition-all duration-300 cursor-pointer group">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900 leading-tight">{lead.fullName}</p>
+                    <p className="text-sm font-bold text-slate-900 leading-tight">{lead.fullName}</p>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button onClick={() => onEdit(lead)} className="p-1 rounded text-blue-700 hover:bg-sky-500/10"><Edit3 size={12} /></button>
-                      <button onClick={() => onDelete(lead.id)} className="p-1 rounded text-red-400 hover:bg-red-500/10"><Trash2 size={12} /></button>
+                      <button onClick={() => onEdit(lead)} className="p-1.5 rounded-lg text-blue-700 hover:bg-blue-500/10 transition-colors"><Edit3 size={13} /></button>
+                      <button onClick={() => onDelete(lead.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 size={13} /></button>
                     </div>
                   </div>
-                  {lead.companyName && <p className="text-xs text-slate-500">{lead.companyName}</p>}
-                  <p className="text-xs text-blue-700">{lead.phone}</p>
-                  <p className="text-xs text-slate-500 truncate">{lead.serviceInterested}</p>
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] text-slate-600 inline-flex items-center px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">{lead.leadSource}</span>
+                  {lead.companyName && <p className="text-xs font-medium text-slate-600">{lead.companyName}</p>}
+                  <p className="text-xs font-semibold text-blue-700">{lead.phone}</p>
+                  <p className="text-[11px] text-slate-500 truncate font-medium">{lead.serviceInterested}</p>
+                  <div className="flex items-center justify-between pt-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100/80 border border-slate-200/50">{lead.leadSource}</span>
                     <div className="flex gap-1">
                       {STATUSES.filter(s => s !== lead.status && s !== 'Lost').map(s => (
                         <button

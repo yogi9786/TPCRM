@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:8000') : 'https://tpcrm.onrender.com';
+const API = 'https://tpcrm.onrender.com';
 
 interface ChatMsg {
   id: string

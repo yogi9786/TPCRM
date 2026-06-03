@@ -5,13 +5,12 @@ import { useAuth } from '../contexts/AuthContext'
 import MainLayout from '../layouts/MainLayout'
 import {
   MessageCircle, Send, Phone, CheckCheck, Clock,
-  AlertCircle, Zap, Users, ToggleLeft, ToggleRight, RefreshCw,
+  AlertCircle, Zap, Users, ToggleLeft, ToggleRight, RefreshCw, User
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:8000') : 'https://tpcrm.onrender.com';
+const API = 'https://tpcrm.onrender.com';
 
 // Default templates
 const DEFAULT_TEMPLATES = [
@@ -25,6 +24,7 @@ export default function WhatsApp() {
   const { currentUser } = useAuth()
   const [tab, setTab]                   = useState<'send' | 'logs' | 'automation'>('send')
   const [phone, setPhone]               = useState('')
+  const [name, setName]                 = useState('')
   const [message, setMessage]           = useState('')
   const [templates, setTemplates]       = useState(() => {
     const saved = localStorage.getItem('whatsapp_templates')
@@ -63,6 +63,15 @@ export default function WhatsApp() {
   const [autoMessage, setAutoMessage]   = useState("Hi! Thanks for reaching out to TekhPortal. We'll get back to you shortly. 🚀")
   const [messages, setMessages]         = useState<any[]>([])
   const [loadingLogs, setLoadingLogs]   = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    fetchLogs().then(() => {
+      setIsRefreshing(false)
+      toast.success('WhatsApp data refreshed')
+    })
+  }
 
   // ── Fetch message logs from backend (not Firestore) ──────────────────────
   async function fetchLogs() {
@@ -144,7 +153,7 @@ export default function WhatsApp() {
           const snap = await getDocs(q);
           if (snap.empty) {
             await addDoc(collection(db, 'leads'), {
-              fullName: 'Unknown (WhatsApp)',
+              fullName: name.trim() || 'Unknown',
               phone: phone.trim(),
               email: '',
               companyName: '',
@@ -164,6 +173,7 @@ export default function WhatsApp() {
       }
 
       setPhone('')
+      setName('')
       setMessage('')
       setSelectedTemplate('')
     } catch (err: unknown) {
@@ -205,9 +215,15 @@ export default function WhatsApp() {
             </h1>
             <p className="page-subtitle">Send messages &amp; automate replies via Twilio</p>
           </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 self-start sm:self-auto">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-emerald-400 font-medium">Twilio Connected</span>
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <button onClick={handleRefresh} className="btn-secondary px-3 py-1.5 h-auto">
+              <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-emerald-400 font-medium">Twilio Connected</span>
+            </div>
           </div>
         </div>
 
@@ -263,10 +279,10 @@ export default function WhatsApp() {
                     key={t.id}
                     onClick={() => applyTemplate(t)}
                     className={clsx(
-                      'w-full text-left p-3.5 rounded-xl border transition-all duration-150',
+                      'w-full text-left p-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md',
                       selectedTemplate === t.id
-                        ? 'border-blue-400 bg-blue-50'
-                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100'
+                        ? 'border-blue-400 bg-blue-50/50 backdrop-blur-sm shadow-sm'
+                        : 'border-slate-200/50 bg-white/40 backdrop-blur-sm hover:border-slate-300 hover:bg-white/70'
                     )}
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -297,6 +313,20 @@ export default function WhatsApp() {
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                 <Send size={14} className="text-blue-400" /> Compose &amp; Send
               </h2>
+
+              <div>
+                <label className="label">Recipient Name (Optional)</label>
+                <div className="relative mb-4">
+                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="input-field pl-10"
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="label">Recipient Phone Number</label>
@@ -390,7 +420,7 @@ export default function WhatsApp() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {messages.map((msg: any) => (
-                      <tr key={msg.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={msg.id} className="hover:bg-white/40 transition-colors">
                         <td className="table-cell text-blue-400 font-medium">{msg.phone}</td>
                         <td className="table-cell max-w-[260px] truncate">{msg.body}</td>
                         <td className="table-cell">

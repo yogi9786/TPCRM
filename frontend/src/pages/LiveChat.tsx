@@ -4,14 +4,13 @@ import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import MainLayout from '../layouts/MainLayout'
 import { 
-  MessageSquare, Send, Phone, User, Bot, Search, ShieldAlert, Check, RefreshCw, AlertCircle, ToggleLeft, ToggleRight, Edit2, Trash2
+  MessageSquare, Send, Phone, User, Bot, Search, ShieldAlert, Check, RefreshCw, AlertCircle, ToggleLeft, ToggleRight, Edit2, Trash2, Mail
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { Lead } from '../types'
 
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API = isLocalhost ? (import.meta.env.VITE_API_URL || 'http://localhost:8000') : 'https://tpcrm.onrender.com';
+const API = 'https://tpcrm.onrender.com';
 
 interface ChatMessage {
   id?: string
@@ -30,11 +29,24 @@ export default function LiveChat() {
   const [messageText, setMessageText] = useState('')
   
   // Chat modes & automation states
-  const [chatMode, setChatMode] = useState<'web' | 'whatsapp'>('web')
+  const [chatMode, setChatMode] = useState<'web' | 'whatsapp' | 'email'>('web')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [sending, setSending] = useState(false)
   const [botTyping, setBotTyping] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    setTimeout(() => {
+      setIsRefreshing(false)
+      toast.success('Live Chat data refreshed')
+    }, 600)
+  }
+  
+  // Email chat state
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
   
   // Edit State
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -218,10 +230,15 @@ export default function LiveChat() {
         {/* Left column — Lead Selector */}
         <div className="w-full md:w-[280px] lg:w-[320px] flex flex-col glass-card border-slate-200 overflow-hidden flex-shrink-0">
           <div className="p-4 border-b border-slate-200">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
-              <MessageSquare className="text-blue-400" size={18} />
-              Conversations
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <MessageSquare className="text-blue-400" size={18} />
+                Conversations
+              </h2>
+              <button onClick={handleRefresh} className="text-slate-400 hover:text-blue-500 transition-colors">
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+              </button>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
               <input
@@ -310,6 +327,12 @@ export default function LiveChat() {
                       className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'whatsapp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-500 hover:text-slate-900')}
                     >
                       WhatsApp Mock
+                    </button>
+                    <button
+                      onClick={() => setChatMode('email')}
+                      className={clsx('px-2.5 py-1.5 font-medium transition-colors flex items-center gap-1', chatMode === 'email' ? 'bg-orange-500/20 text-orange-400' : 'text-slate-500 hover:text-slate-900')}
+                    >
+                      <Mail size={11} /> Email
                     </button>
                   </div>
                 </div>
@@ -403,7 +426,70 @@ export default function LiveChat() {
 
               {/* Chat Input */}
               <div className="p-4 border-t border-slate-200 flex-shrink-0 bg-white/40">
-                <div className="flex gap-2">
+                {chatMode === 'email' ? (
+                  // ── Email Compose Panel ───────────────────────────────────
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Email subject"
+                        value={emailSubject}
+                        onChange={e => setEmailSubject(e.target.value)}
+                        className="input-field flex-1 text-xs py-2"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <textarea
+                        rows={3}
+                        placeholder={`Write an email to ${selectedLead.fullName}...`}
+                        value={messageText}
+                        onChange={e => setMessageText(e.target.value)}
+                        className="input-field flex-1 resize-none text-xs"
+                      />
+                      <button
+                        disabled={!messageText.trim() || !emailSubject.trim() || emailSending}
+                        onClick={async () => {
+                          if (!selectedLead?.email || !messageText.trim() || !emailSubject.trim()) {
+                            if (!selectedLead?.email) { import('react-hot-toast').then(m => m.default.error('Lead has no email address')); return; }
+                            return;
+                          }
+                          setEmailSending(true)
+                          try {
+                            const token = currentUser ? await currentUser.getIdToken() : ''
+                            const res = await fetch(`${API}/email/chat/send`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({
+                                lead_id: selectedLead.id,
+                                to_email: selectedLead.email,
+                                to_name: selectedLead.fullName,
+                                subject: emailSubject,
+                                body: messageText.trim(),
+                              }),
+                            })
+                            if (!res.ok) throw new Error('Failed to send')
+                            import('react-hot-toast').then(m => m.default.success('Email sent via Brevo!'))
+                            setMessageText('')
+                            setEmailSubject('')
+                          } catch {
+                            import('react-hot-toast').then(m => m.default.error('Failed to send email'))
+                          } finally {
+                            setEmailSending(false)
+                          }
+                        }}
+                        className="btn-primary px-4 self-end"
+                      >
+                        {emailSending ? <RefreshCw size={14} className="animate-spin" /> : <><Mail size={14} /> Send</>}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-orange-400 flex items-center gap-1">
+                      <AlertCircle size={10} />
+                      Sending to: {selectedLead.email || 'No email on file'}
+                    </p>
+                  </div>
+                ) : (
+                  // ── Normal Chat Input ─────────────────────────────────────
+                  <div className="flex gap-2">
                   {/* Simulate customer client sending message */}
                   {chatMode === 'whatsapp' && (
                     <button
@@ -440,8 +526,10 @@ export default function LiveChat() {
                     Send
                   </button>
                 </div>
+                )}
                 
                 {/* Mode notices / helpers */}
+                {chatMode !== 'email' && (
                 <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500">
                   {chatMode === 'whatsapp' ? (
                     <span className="text-emerald-400 flex items-center gap-1">
@@ -452,6 +540,7 @@ export default function LiveChat() {
                     <span>Conversing as Agent</span>
                   )}
                 </div>
+                )}
               </div>
             </>
           ) : (

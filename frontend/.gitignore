@@ -5,3 +5,6 @@ dist/
 frontend/node_modules/
 frontend/dist/
 .env.example 
+.env.example
+
+.env

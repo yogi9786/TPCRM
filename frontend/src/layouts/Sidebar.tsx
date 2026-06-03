@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   MessageSquare,
+  Mail,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/',          icon: LayoutDashboard, label: 'Dashboard',  exact: true },
   { to: '/crm',       icon: Users,           label: 'CRM Leads' },
   { to: '/livechat',  icon: MessageSquare,   label: 'Live Chat' },
+  { to: '/email',     icon: Mail,            label: 'Email' },
   { to: '/whatsapp',  icon: MessageCircle,   label: 'WhatsApp' },
   { to: '/meta',      icon: Share2,          label: 'Meta Ads' },
   { to: '/campaigns', icon: Megaphone,       label: 'Campaigns' },
@@ -49,21 +51,21 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const sidebarContent = (
     <aside
       className={clsx(
-        'flex flex-col h-full bg-white border-r border-slate-200 transition-all duration-300',
-        collapsed ? 'w-[68px]' : 'w-[220px]'
+        'flex flex-col h-full bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-[4px_0_24px_rgb(0,0,0,0.03)] transition-all duration-300 relative z-20',
+        collapsed ? 'w-[76px]' : 'w-[240px]'
       )}
     >
       {/* Logo */}
       <div
         className={clsx(
-          'flex items-center gap-3 px-4 py-4 border-b border-slate-100 flex-shrink-0',
+          'flex items-center gap-3 px-4 py-5 border-b border-slate-100 flex-shrink-0',
           collapsed && 'justify-center px-2'
         )}
       >
         <img
           src="/tekhportal.webp"
           alt="TekhPortal"
-          className={clsx('object-contain flex-shrink-0', collapsed ? 'h-8 w-8' : 'h-9 w-auto max-w-[140px]')}
+          className={clsx('object-contain flex-shrink-0', collapsed ? 'h-20 w-20' : 'h-24 w-auto max-w-[280px]')}
           onError={(e) => {
             const el = e.target as HTMLImageElement
             el.style.display = 'none'
@@ -93,11 +95,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             title={collapsed ? label : undefined}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group',
-                isActive
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50',
-                collapsed && 'justify-center'
+                isActive ? 'nav-item-active' : 'nav-item-inactive group',
+                collapsed && 'justify-center !px-0'
               )
             }
           >
@@ -126,7 +125,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             collapsed && 'justify-center'
           )}
         >
-          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-slate-900 text-xs font-bold select-none">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md flex items-center justify-center text-white text-xs font-bold select-none border border-white/20">
             {currentUser?.email?.charAt(0).toUpperCase() ?? 'A'}
           </div>
           {!collapsed && (
@@ -178,12 +177,12 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             className="absolute inset-0 bg-white/20 backdrop-blur-sm"
             onClick={onMobileClose}
           />
-          <div className="relative z-10 w-[220px] h-full">
+          <div className="relative z-10 w-[240px] h-full shadow-2xl">
             {sidebarContent}
           </div>
           <button
             onClick={onMobileClose}
-            className="absolute top-4 right-4 z-20 p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900"
+            className="absolute top-4 right-4 z-20 p-2 rounded-xl bg-white/80 backdrop-blur-md border border-white/50 text-slate-500 hover:text-slate-900 shadow-lg"
           >
             <X size={18} />
           </button>

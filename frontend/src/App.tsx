@@ -11,7 +11,7 @@ import Campaigns from './pages/Campaigns'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
 import LiveChat from './pages/LiveChat'
-
+import Email from './pages/Email'
 
 export default function App() {
   return (
@@ -43,6 +43,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
           <Route path="/livechat" element={<ProtectedRoute><LiveChat /></ProtectedRoute>} />
+          <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
           <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
           <Route path="/meta" element={<ProtectedRoute><Meta /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />

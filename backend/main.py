@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 import logging
 
 from config import ALLOWED_ORIGINS
-from routers import leads, whatsapp, meta, campaigns, chatbot
+from routers import leads, whatsapp, meta, campaigns, chatbot, email as email_router
 from auth import router as auth_router, get_current_user
 
 # Configure logging
@@ -18,21 +18,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from contextlib import asynccontextmanager
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-from redis import asyncio as aioredis
 import os
+from contextlib import asynccontextmanager
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-    try:
-        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
-        FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-        logger.info("Redis cache initialized successfully")
-    except Exception as e:
-        logger.warning(f"Failed to initialize Redis cache: {e}")
+async def lifespan(app: FastAPI): 
     yield
 
 app = FastAPI(
@@ -63,6 +53,7 @@ app.include_router(whatsapp.router, dependencies=[Depends(get_current_user)])
 app.include_router(meta.router, dependencies=[Depends(get_current_user)])
 app.include_router(campaigns.router, dependencies=[Depends(get_current_user)])
 app.include_router(chatbot.router, dependencies=[Depends(get_current_user)])
+app.include_router(email_router.router, dependencies=[Depends(get_current_user)])
 
 # Mock auth logic removed (now in auth.py)
 @app.get("/", tags=["health"])

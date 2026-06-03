@@ -7,13 +7,6 @@ from models.lead import LeadCreate, LeadUpdate, LeadResponse
 from services.firebase_service import get_db
 from auth import get_current_user
 from typing import Optional
-from fastapi_cache.decorator import cache
-from fastapi import Request, Response
-
-def user_cache_key_builder(func, namespace: str = "", request: Request = None, response: Response = None, *args, **kwargs):
-    user = kwargs.get("user")
-    uid = user["uid"] if user else "anonymous"
-    return f"{namespace}:{func.__module__}:{func.__name__}:{uid}"
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -22,7 +15,6 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 
 
 @router.get("/", response_model=list[dict])
-@cache(expire=60, key_builder=user_cache_key_builder)
 async def get_leads(user: dict = Depends(get_current_user)):
     """Get all leads for the authenticated user."""
     db = get_db()

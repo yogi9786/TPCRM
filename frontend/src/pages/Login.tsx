@@ -63,7 +63,7 @@ export default function Login() {
             <img
               src="/tekhportal.webp"
               alt="TekhPortal"
-              className="h-10 w-auto object-contain"
+              className="h-24 w-auto object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           </div>

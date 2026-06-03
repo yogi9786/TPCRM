@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import MainLayout from '../layouts/MainLayout'
-import { Settings as SettingsIcon, Save, Key, Bell, Shield, Webhook, Eye, EyeOff } from 'lucide-react'
+import { Settings as SettingsIcon, Save, Key, Bell, Shield, Webhook, Eye, EyeOff, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -9,6 +9,7 @@ export default function Settings() {
   const [showTwilioSid, setShowTwilioSid] = useState(false)
   const [showTwilioToken, setShowTwilioToken] = useState(false)
   const [showMetaToken, setShowMetaToken] = useState(false)
+  const [showBrevoKey, setShowBrevoKey] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [apiConfig, setApiConfig] = useState({
@@ -17,6 +18,8 @@ export default function Settings() {
     twilioWhatsAppNumber: 'whatsapp:+14155238886',
     metaPageAccessToken: '',
     metaPageId: '',
+    brevoApiKey: '',
+    brevoSenderEmail: 'noreply@tekhportal.com',
     backendUrl: 'https://tpcrm.onrender.com',
   })
 
@@ -162,6 +165,45 @@ export default function Settings() {
                         placeholder="123456789012345"
                         value={apiConfig.metaPageId}
                         onChange={e => setApiConfig(c => ({ ...c, metaPageId: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-5">
+                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <Mail size={15} className="text-orange-400" /> Brevo (Email)
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Get your API key from{' '}
+                    <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
+                      Brevo API Keys
+                    </a>
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="label">API Key</label>
+                      <div className="relative">
+                        <input
+                          type={showBrevoKey ? 'text' : 'password'}
+                          className="input-field pr-10"
+                          placeholder="xkeysib-xxxxxxxx..."
+                          value={apiConfig.brevoApiKey}
+                          onChange={e => setApiConfig(c => ({ ...c, brevoApiKey: e.target.value }))}
+                        />
+                        <button onClick={() => setShowBrevoKey(!showBrevoKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
+                          {showBrevoKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Sender Email</label>
+                      <input
+                        type="email"
+                        className="input-field"
+                        placeholder="noreply@yourdomain.com"
+                        value={apiConfig.brevoSenderEmail}
+                        onChange={e => setApiConfig(c => ({ ...c, brevoSenderEmail: e.target.value }))}
                       />
                     </div>
                   </div>
