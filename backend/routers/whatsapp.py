@@ -6,14 +6,14 @@ from datetime import datetime
 from models.message import SendMessageRequest
 from services.firebase_service import get_db
 from services.twilio_service import send_whatsapp_message, send_bulk_messages
-import logging
+from auth import get_current_user
+from fastapi import Depends
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
-logger = logging.getLogger(__name__)
 
 
 @router.post("/send")
-async def send_message(req: SendMessageRequest):
+async def send_message(req: SendMessageRequest, user: dict = Depends(get_current_user)):
     """
     Send a single WhatsApp message via Twilio.
     Saves the attempt to the local DB regardless of outcome.
@@ -22,8 +22,9 @@ async def send_message(req: SendMessageRequest):
 
     result = send_whatsapp_message(req.to, req.body)
 
-    # Persist message log (success or failure)
+    
     msg_data = {
+        "userId": user["uid"],
         "leadId": req.lead_id or "",
         "phone": req.to,
         "direction": "outbound",
@@ -35,13 +36,13 @@ async def send_message(req: SendMessageRequest):
     try:
         db.collection("messages").add(msg_data)
     except Exception as db_err:
-        logger.warning(f"Could not save message log: {db_err}")
+        pass
 
     if not result["success"]:
         twilio_code = result.get("code")
         raw_error  = result.get("error", "Failed to send message")
 
-        # Map common Twilio error codes to helpful messages
+        
         TWILIO_ERRORS = {
             63007: (
                 "Sandbox opt-in required: the recipient must first send "
@@ -61,7 +62,7 @@ async def send_message(req: SendMessageRequest):
         }
 
         friendly = TWILIO_ERRORS.get(twilio_code, raw_error)
-        logger.error(f"Twilio error {twilio_code}: {raw_error}")
+        pass
         raise HTTPException(
             status_code=400,
             detail={"message": friendly, "twilio_code": twilio_code, "raw": raw_error},
@@ -72,14 +73,14 @@ async def send_message(req: SendMessageRequest):
 
 
 @router.post("/broadcast")
-async def broadcast_message(campaign_id: str, message: str, phone_numbers: list[str]):
+async def broadcast_message(campaign_id: str, message: str, phone_numbers: list[str], user: dict = Depends(get_current_user)):
     """
     Send a message to multiple numbers (campaign broadcast).
     """
     db = get_db()
     results = send_bulk_messages(phone_numbers, message)
     
-    # Update campaign stats
+    
     campaign_ref = db.collection("campaigns").document(campaign_id)
     campaign_ref.update({
         "sentCount": results["sent"],
@@ -107,10 +108,10 @@ async def twilio_webhook(
     db = get_db()
     
     if Body and From:
-        # Incoming message
-        logger.info(f"Incoming WA message from {From}: {Body}")
         
-        # Find matching lead
+        pass
+        
+        
         phone_cleaned = From.replace("whatsapp:", "").replace("+91", "")
         leads = db.collection("leads").where("phone", ">=", phone_cleaned).limit(1).stream()
         lead_id = ""
@@ -118,7 +119,7 @@ async def twilio_webhook(
             lead_id = lead.id
             break
         
-        # Save message
+        
         db.collection("messages").add({
             "leadId": lead_id,
             "phone": From.replace("whatsapp:", ""),
@@ -130,34 +131,31 @@ async def twilio_webhook(
         })
     
     elif MessageStatus and MessageSid:
-        # Status update — find message and update status
-        logger.info(f"Message {MessageSid} status: {MessageStatus}")
+        
+        pass
         msgs_ref = db.collection("messages").where("twilioSid", "==", MessageSid).stream()
         for msg_doc in msgs_ref:
             try:
-                # Real Firestore DocumentSnapshot has .reference
+                
                 msg_doc.reference.update({"status": MessageStatus})
             except AttributeError:
-                # MockDocument — use the collection API instead
+                
                 db.collection("messages").document(msg_doc.id).update({"status": MessageStatus})
     
-    # Return TwiML response (empty is fine)
+    
     return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
 
 
-@router.get("/messages/all")
-async def get_all_messages():
-    """Get all messages (for the message log view)."""
+@router.get("/messages")
+async def get_messages(lead_id: str = None, user: dict = Depends(get_current_user)):
+    """Get messages for a user, optionally filtered by lead."""
     db = get_db()
-    msgs = db.collection("messages").stream()
+    query = db.collection("messages").where("userId", "==", user["uid"])
+    if lead_id:
+        query = query.where("leadId", "==", lead_id)
+        
+    msgs = query.stream()
     result = [{"id": m.id, **m.to_dict()} for m in msgs]
+    
     result.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
     return result
-
-
-@router.get("/messages/{lead_id}")
-async def get_messages(lead_id: str):
-    """Get all messages for a lead."""
-    db = get_db()
-    msgs = db.collection("messages").where("leadId", "==", lead_id).stream()
-    return [{"id": m.id, **m.to_dict()} for m in msgs]

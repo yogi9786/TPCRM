@@ -9,20 +9,18 @@ Initialization priority:
 """
 import json
 import os
-import logging
 
-logger = logging.getLogger(__name__)
 
-# ── Optional firebase_admin import ──────────────────────────────────────────
+
 try:
     import firebase_admin
     from firebase_admin import credentials, firestore, auth
     _FIREBASE_AVAILABLE = True
 except ImportError:
-    firebase_admin = None  # type: ignore
-    credentials = None     # type: ignore
-    firestore = None       # type: ignore
-    auth = None            # type: ignore
+    firebase_admin = None  
+    credentials = None     
+    firestore = None       
+    auth = None            
     _FIREBASE_AVAILABLE = False
 
 try:
@@ -32,10 +30,10 @@ except Exception:
     FIREBASE_PROJECT_ID = ""
 
 _firebase_app = None
-_use_mock = False   # set True once we confirm Firebase is unavailable
+_use_mock = False   
 
 
-# ── Mock database (local JSON fallback) ─────────────────────────────────────
+
 import uuid
 
 class MockDocument:
@@ -58,7 +56,7 @@ class MockQuery:
         return MockQuery(self.collection_name, self.docs, self.filters + [(field, op, value)])
 
     def order_by(self, field, direction="ASCENDING"):
-        return self  # sorting not critical for mock
+        return self  
 
     def limit(self, n):
         return self
@@ -145,7 +143,7 @@ class MockFirestoreClient:
             with open(path, "w") as f:
                 json.dump(self.data, f, indent=2, default=str)
         except Exception as e:
-            logger.warning(f"MockDB save failed: {e}")
+            pass
 
     def collection(self, name):
         return MockCollectionRef(name, self)
@@ -168,7 +166,7 @@ class MockFirestoreClient:
             self._save()
 
 
-# ── Firebase initialisation ──────────────────────────────────────────────────
+
 def _init_firebase_app():
     """Try to initialise Firebase Admin SDK. Returns True on success."""
     global _firebase_app
@@ -176,14 +174,14 @@ def _init_firebase_app():
     if not _FIREBASE_AVAILABLE:
         return False
 
-    # Already initialised in this process
+    
     try:
         _firebase_app = firebase_admin.get_app()
         return True
     except ValueError:
-        pass  # no app yet — proceed
+        pass  
 
-    # 1) Service account JSON file on disk
+    
     sa_file = os.path.abspath(FIREBASE_SERVICE_ACCOUNT_JSON)
     if os.path.exists(sa_file):
         try:
@@ -191,12 +189,12 @@ def _init_firebase_app():
             _firebase_app = firebase_admin.initialize_app(cred, {
                 "projectId": FIREBASE_PROJECT_ID or None,
             })
-            logger.info("Firebase initialised via service account file ✅")
+            pass
             return True
         except Exception as e:
-            logger.warning(f"Firebase file init failed: {e}")
+            pass
 
-    # 2) Service account JSON from environment variable
+    
     sa_content = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_CONTENT", "").strip()
     if sa_content and sa_content not in ("{}", ""):
         try:
@@ -205,12 +203,12 @@ def _init_firebase_app():
             _firebase_app = firebase_admin.initialize_app(cred, {
                 "projectId": FIREBASE_PROJECT_ID or sa_dict.get("project_id"),
             })
-            logger.info("Firebase initialised via env JSON content ✅")
+            pass
             return True
         except Exception as e:
-            logger.warning(f"Firebase env-JSON init failed: {e}")
+            pass
 
-    # No valid credentials found — caller will fall back to mock DB
+    
     return False
 
 
@@ -236,11 +234,7 @@ def get_db():
         return firestore.client()
     except Exception as e:
         if not _use_mock:
-            logger.warning(
-                "Firebase Admin SDK unavailable — using local JSON database.\n"
-                "  To connect Firebase: place serviceAccountKey.json in the backend folder.\n"
-                f"  Detail: {e}"
-            )
+            pass
             _use_mock = True
         return MockFirestoreClient()
 

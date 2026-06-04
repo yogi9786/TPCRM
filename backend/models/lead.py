@@ -32,7 +32,7 @@ class LeadCreate(BaseModel):
     serviceInterested: Optional[str] = ""
     status: LeadStatus = LeadStatus.New
     notes: Optional[str] = ""
-    userId: Optional[str] = None   # filled from auth token if not provided
+    userId: Optional[str] = None   
     tags: Optional[list[str]] = []
     value: Optional[float] = None
     whatsappOptIn: Optional[bool] = True

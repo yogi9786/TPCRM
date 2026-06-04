@@ -5,18 +5,16 @@ Main application entry point
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import logging
 
 from config import ALLOWED_ORIGINS
 from routers import leads, whatsapp, meta, campaigns, chatbot, email as email_router
 from auth import router as auth_router, get_current_user
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-logger = logging.getLogger(__name__)
 
 import os
 from contextlib import asynccontextmanager
@@ -34,7 +32,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS + ["http://localhost:5173", "http://localhost:3000", "https://tpcrm.netlify.app", "https://tpcrm.onrender.com"],
@@ -43,19 +41,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-# Include auth router FIRST (not protected by get_current_user)
+
+
 app.include_router(auth_router)
 
-# Protect all other routers with JWT authentication
-app.include_router(leads.router, dependencies=[Depends(get_current_user)])
-app.include_router(whatsapp.router, dependencies=[Depends(get_current_user)])
-app.include_router(meta.router, dependencies=[Depends(get_current_user)])
-app.include_router(campaigns.router, dependencies=[Depends(get_current_user)])
-app.include_router(chatbot.router, dependencies=[Depends(get_current_user)])
-app.include_router(email_router.router, dependencies=[Depends(get_current_user)])
 
-# Mock auth logic removed (now in auth.py)
+app.include_router(leads.router)
+app.include_router(whatsapp.router)
+app.include_router(meta.router)
+app.include_router(campaigns.router)
+app.include_router(chatbot.router)
+app.include_router(email_router.router)
+
+
 @app.get("/", tags=["health"])
 async def root():
     return {
@@ -72,7 +70,7 @@ async def health_check():
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    pass
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error", "error": str(exc)},

@@ -32,7 +32,7 @@ def get_lead_details(leadgen_id: str) -> dict:
     
     if response.status_code == 200:
         data = response.json()
-        # Convert field_data list to dict
+        
         field_dict = {}
         for field in data.get("field_data", []):
             field_dict[field["name"]] = field["values"][0] if field.get("values") else ""

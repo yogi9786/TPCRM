@@ -3,10 +3,8 @@ Brevo (formerly Sendinblue) Email Service
 Sends transactional emails via Brevo REST API v3
 """
 import requests
-import logging
 from config import BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME
 
-logger = logging.getLogger(__name__)
 
 BREVO_API_URL = "https://api.brevo.com/v3"
 
@@ -47,10 +45,10 @@ def send_email(
         if response.status_code in (200, 201):
             return {"success": True, "messageId": response.json().get("messageId")}
         else:
-            logger.error(f"Brevo send failed: {response.status_code} – {response.text}")
+            pass
             return {"success": False, "error": response.text, "status": response.status_code}
     except Exception as e:
-        logger.error(f"Brevo exception: {e}")
+        pass
         return {"success": False, "error": str(e)}
 
 

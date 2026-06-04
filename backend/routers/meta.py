@@ -6,11 +6,11 @@ from datetime import datetime
 from services.firebase_service import get_db
 from services.meta_service import verify_meta_signature, get_lead_details
 from config import META_VERIFY_TOKEN
-import logging
+from auth import get_current_user
+from fastapi import Depends
 import json
 
 router = APIRouter(prefix="/meta", tags=["meta"])
-logger = logging.getLogger(__name__)
 
 
 @router.get("/webhook")
@@ -24,7 +24,7 @@ async def verify_webhook(
     Facebook calls this GET to confirm ownership.
     """
     if hub_mode == "subscribe" and hub_verify_token == META_VERIFY_TOKEN:
-        logger.info("Meta webhook verified successfully")
+        pass
         return Response(content=hub_challenge, media_type="text/plain")
     
     raise HTTPException(status_code=403, detail="Webhook verification failed")
@@ -39,9 +39,9 @@ async def receive_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256", "")
     
-    # Verify signature (optional but recommended)
+    
     if not verify_meta_signature(body, signature):
-        logger.warning("Meta webhook signature mismatch — processing anyway")
+        pass
     
     try:
         payload = json.loads(body)
@@ -57,11 +57,11 @@ async def receive_webhook(request: Request):
                 leadgen_id = value.get("leadgen_id")
                 
                 if leadgen_id:
-                    # Fetch full lead data from Meta Graph API
+                    
                     lead_data = get_lead_details(leadgen_id)
                     
                     if "error" not in lead_data:
-                        # Save to Firestore meta_leads collection
+                        
                         doc = {
                             "leadgenId": leadgen_id,
                             "formId": value.get("form_id", ""),
@@ -74,13 +74,13 @@ async def receive_webhook(request: Request):
                             "createdAt": datetime.utcnow().isoformat(),
                         }
                         db.collection("meta_leads").add(doc)
-                        logger.info(f"Meta lead {leadgen_id} saved to Firestore")
+                        pass
     
     return {"status": "ok"}
 
 
 @router.get("/leads")
-async def get_meta_leads(imported: bool = None):
+async def get_meta_leads(imported: bool = None, user: dict = Depends(get_current_user)):
     """Get all Meta lead submissions."""
     db = get_db()
     ref = db.collection("meta_leads")
@@ -91,7 +91,7 @@ async def get_meta_leads(imported: bool = None):
 
 
 @router.post("/leads/{meta_lead_id}/import")
-async def import_meta_lead(meta_lead_id: str, user_id: str):
+async def import_meta_lead(meta_lead_id: str, user: dict = Depends(get_current_user)):
     """Import a Meta lead into the CRM leads collection."""
     db = get_db()
     meta_ref = db.collection("meta_leads").document(meta_lead_id)
@@ -113,7 +113,7 @@ async def import_meta_lead(meta_lead_id: str, user_id: str):
         "serviceInterested": "Meta Lead Ad",
         "status": "New",
         "notes": f"Imported from Meta Form ID: {meta_data.get('formId')}",
-        "userId": user_id,
+        "userId": user["uid"],
         "createdAt": now,
         "updatedAt": now,
     }

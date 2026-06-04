@@ -21,7 +21,7 @@ class ChatQueryRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = []
 
-# Global cache for company.txt knowledge
+
 COMPANY_KNOWLEDGE = ""
 
 def load_company_knowledge() -> str:
@@ -54,10 +54,10 @@ async def chat_query(req: ChatQueryRequest, user: dict = Depends(get_current_use
     if not api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured in backend environment")
 
-    # Load context
+    
     knowledge = load_company_knowledge()
     
-    # Initialize Groq client
+    
     try:
         client = Groq(api_key=api_key)
     except Exception as e:
@@ -75,22 +75,22 @@ async def chat_query(req: ChatQueryRequest, user: dict = Depends(get_current_use
         "3. Highlight services such as Brand Strategy, Market Research, ads, and digital campaigns where relevant."
     )
     
-    # Build messages chain
+    
     messages = [
         {"role": "system", "content": system_prompt}
     ]
     
-    # Add history
+    
     if req.history:
         for msg in req.history:
             messages.append({"role": msg.role, "content": msg.content})
             
-    # Add user message
+    
     messages.append({"role": "user", "content": req.message})
     
     try:
         completion = client.chat.completions.create(
-            model="llama3-8b-8192",  # ultra fast and high quality
+            model="llama3-8b-8192",  
             messages=messages,
             temperature=0.7,
             max_tokens=1024,

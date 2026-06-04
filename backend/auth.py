@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import jwt
 
-# If firebase_admin is used in the app, we can import it to create a custom token
+
 try:
     import firebase_admin
     from firebase_admin import auth as firebase_auth
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-super-secret-key-for-dev")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -66,10 +66,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     firebase_token = None
     if _FIREBASE_AVAILABLE:
         try:
-            # We must ensure the firebase app is initialized
+            
             from services.firebase_service import get_firebase_app
             get_firebase_app()
-            # Create a Firebase custom token so the frontend can still talk to Firestore
+            
             custom_token_bytes = firebase_auth.create_custom_token("demo-admin-uid")
             firebase_token = custom_token_bytes.decode("utf-8")
         except Exception as e:

@@ -13,8 +13,15 @@ class CampaignStatus(str, Enum):
 class CampaignCreate(BaseModel):
     name: str
     message: str
+    targetStatus: Optional[str] = "All"
     templateName: Optional[str] = "Custom"
-    userId: str
+
+
+class CampaignUpdate(BaseModel):
+    name: Optional[str] = None
+    message: Optional[str] = None
+    status: Optional[str] = None
+    targetStatus: Optional[str] = None
 
 
 class BroadcastRequest(BaseModel):

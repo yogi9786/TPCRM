@@ -17,7 +17,7 @@ class MessageStatus(str, Enum):
 
 
 class SendMessageRequest(BaseModel):
-    to: str  # phone number
+    to: str  
     body: str
     lead_id: Optional[str] = None
 

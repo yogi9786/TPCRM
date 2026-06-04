@@ -8,11 +8,9 @@ from typing import Optional
 from services.firebase_service import get_db
 from services.email_service import send_email, get_smtp_logs, get_smtp_log_detail
 from auth import get_current_user
-import logging
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter(prefix="/email", tags=["email"])
-logger = logging.getLogger(__name__)
 
 
 class EmailSendRequest(BaseModel):
@@ -22,7 +20,7 @@ class EmailSendRequest(BaseModel):
     html_content: str
     text_content: Optional[str] = ""
     reply_to: Optional[str] = None
-    lead_id: Optional[str] = None  # link email to a CRM lead
+    lead_id: Optional[str] = None  
 
 
 class EmailChatMessage(BaseModel):
@@ -30,7 +28,7 @@ class EmailChatMessage(BaseModel):
     to_email: str
     to_name: str
     subject: str
-    body: str  # plain text body — will be wrapped in HTML
+    body: str  
 
 
 @router.post("/send")
@@ -54,7 +52,7 @@ async def send_transactional_email(
             detail=f"Brevo error: {result.get('error', 'Unknown error')}",
         )
 
-    # Persist to Firestore for history / email chat
+    
     db = get_db()
     doc = {
         "userId": user["uid"],
@@ -70,7 +68,7 @@ async def send_transactional_email(
     }
     db.collection("emails").add(doc)
 
-    logger.info(f"Email sent to {req.to_email} | messageId={result.get('messageId')}")
+    pass
     return {"success": True, "messageId": result.get("messageId")}
 
 
@@ -140,7 +138,7 @@ async def get_email_history(
         return [{"id": d.id, **d.to_dict()} for d in docs]
     except Exception as e:
         if "requires an index" in str(e) or "currently building" in str(e):
-            logger.warning(f"Firestore index building... using in-memory sort fallback: {e}")
+            pass
             docs = ref.stream()
             results = [{"id": d.id, **d.to_dict()} for d in docs]
             results.sort(key=lambda x: x.get("createdAt", ""), reverse=True)

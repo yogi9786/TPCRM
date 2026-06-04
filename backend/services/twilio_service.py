@@ -14,7 +14,7 @@ def format_whatsapp_number(phone: str) -> str:
     """Ensure number is in WhatsApp format: whatsapp:+91XXXXXXXXXX"""
     cleaned = ''.join(c for c in phone if c.isdigit() or c == '+')
     if not cleaned.startswith('+'):
-        cleaned = '+91' + cleaned  # Default to India
+        cleaned = '+91' + cleaned  
     if not cleaned.startswith('whatsapp:'):
         cleaned = f'whatsapp:{cleaned}'
     return cleaned
