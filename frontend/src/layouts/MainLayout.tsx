@@ -1,7 +1,6 @@
 import { ReactNode, useState } from 'react'
 import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
-import ChatbotWidget from '../components/ChatbotWidget'
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -38,9 +37,6 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
-
-      {/* Global AI Chatbot Widget */}
-      <ChatbotWidget />
     </div>
   )
 }
