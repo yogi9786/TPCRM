@@ -15,6 +15,7 @@ import {
   X,
   MessageSquare,
   Mail,
+  CalendarDays,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -27,8 +28,9 @@ const navItems = [
   { to: '/email',     icon: Mail,            label: 'Email' },
   { to: '/whatsapp',  icon: MessageCircle,   label: 'WhatsApp' },
   { to: '/meta',      icon: Share2,          label: 'Meta Ads' },
-  { to: '/campaigns', icon: Megaphone,       label: 'Campaigns' },
-  { to: '/analytics', icon: BarChart3,       label: 'Analytics' },
+  { to: '/campaigns',       icon: Megaphone,       label: 'Campaigns' },
+  { to: '/content-planner', icon: CalendarDays,    label: 'Content Planner' },
+  { to: '/analytics',       icon: BarChart3,       label: 'Analytics' },
   { to: '/settings',  icon: Settings,        label: 'Settings' },
 ]
 

@@ -12,6 +12,7 @@ import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
 import LiveChat from './pages/LiveChat'
 import Email from './pages/Email'
+import ContentPlanner from './pages/ContentPlanner'
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/meta" element={<ProtectedRoute><Meta /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/content-planner" element={<ProtectedRoute><ContentPlanner /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
           {/* Fallback */}

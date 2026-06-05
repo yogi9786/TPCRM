@@ -7,14 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config import ALLOWED_ORIGINS
-from routers import leads, whatsapp, meta, campaigns, email as email_router
+from routers import leads, whatsapp, meta, campaigns, email as email_router, content_plans
 from auth import router as auth_router, get_current_user
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 
 import os
 from contextlib import asynccontextmanager
@@ -51,6 +45,7 @@ app.include_router(whatsapp.router)
 app.include_router(meta.router)
 app.include_router(campaigns.router)
 app.include_router(email_router.router)
+app.include_router(content_plans.router)
 
 
 @app.get("/", tags=["health"])
