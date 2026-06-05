@@ -6,35 +6,37 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-slate-50/50 overflow-hidden relative">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-400/10 blur-[100px] animate-blob" />
-        <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-400/10 blur-[120px] animate-blob animation-delay-2000" />
-        <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] rounded-full bg-emerald-400/5 blur-[120px] animate-blob animation-delay-4000" />
-      </div>
+    <div className="flex h-screen bg-slate-100 overflow-hidden">
 
       {/* Sidebar */}
-      <div className="z-10 relative">
+      <div className="relative z-20">
         <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
       </div>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden z-10 relative">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-white/40 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-          <img src="/tekhportal.webp" alt="TekhPortal" className="h-8 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          <button 
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Mobile top bar */}
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-10">
+          <img
+            src="/tekhportal.webp"
+            alt="TekhPortal"
+            className="h-8 w-auto object-contain"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+          <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-xl text-slate-700 hover:bg-white shadow-sm transition-all"
+            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
           >
             <Menu size={20} />
           </button>
         </div>
 
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-0">
-          {children}
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-5 md:p-8 max-w-screen-2xl mx-auto">
+            {children}
+          </div>
         </div>
       </main>
     </div>

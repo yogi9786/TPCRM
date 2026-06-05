@@ -1,17 +1,45 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, MessageCircle, Share2, BarChart3, Users } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+/* ── Animated stat counter ── */
+function AnimatedCounter({ to, label, suffix = '' }: { to: number; label: string; suffix?: string }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        let start = 0
+        const step = Math.ceil(to / 40)
+        const timer = setInterval(() => {
+          start += step
+          if (start >= to) { setCount(to); clearInterval(timer) }
+          else setCount(start)
+        }, 30)
+      }
+    }, { threshold: 0.1 })
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [to])
+  
+  return (
+    <div ref={ref} className="text-center">
+      <p className="text-2xl lg:text-3xl font-black text-white tabular-nums" style={{letterSpacing: '-0.04em'}}>{count}{suffix}</p>
+      <p className="text-white/50 text-[10px] lg:text-xs font-semibold mt-0.5 uppercase tracking-widest">{label}</p>
+    </div>
+  )
+}
 
 export default function Login() {
-  const [email, setEmail]             = useState('')
-  const [password, setPassword]       = useState('')
+  const [email, setEmail]               = useState('')
+  const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading]         = useState(false)
-  const { login }                     = useAuth()
-  const navigate                      = useNavigate()
+  const [loading, setLoading]           = useState(false)
+  const { login }                       = useAuth()
+  const navigate                        = useNavigate()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -23,185 +51,211 @@ export default function Login() {
       navigate('/')
     } catch (err: any) {
       const msg =
-        err?.code === 'auth/invalid-credential' || err?.message === 'Invalid email or password'
-          ? 'Invalid email or password'
-          : err?.code === 'auth/user-not-found'
-          ? 'No account found with this email'
-          : err?.message || 'Sign in failed. Please try again.'
+        err?.code === 'auth/invalid-credential' ? 'Invalid email or password' :
+        err?.code === 'auth/user-not-found' ? 'No account found with this email' :
+        err?.message || 'Sign in failed. Please try again.'
       toast.error(msg)
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <>
+      <style>{`
+        @keyframes gradientShift {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes morphBlob {
+          0%   { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
+          50%  { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; }
+          100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
+        }
+        @keyframes scanLine {
+          0%   { transform: translateY(-100%); opacity: 0; }
+          20%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(400%); opacity: 0; }
+        }
+        @keyframes spinSlow {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
-      {/* ── Left panel — Branding ───────────────────── */}
-      <div className="hidden lg:flex flex-col flex-1 relative overflow-hidden bg-white border-r border-slate-200">
-        
-        {/* Animated Background Orbs */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-violet-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
-          
-          {/* Light subtle grid */}
-          <div
-            className="absolute inset-0 opacity-[0.04]"
+      <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100">
+
+        {/* ══ LEFT — Animated hero panel (Hidden on small mobile, visible on tablet/desktop) ════════════════════════════ */}
+        <div className="hidden md:flex flex-col flex-1 relative overflow-hidden min-h-[40vh] lg:min-h-screen" style={{
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 35%, #2563eb 60%, #4f46e5 100%)',
+          backgroundSize: '300% 300%',
+          animation: 'gradientShift 8s ease infinite',
+        }}>
+
+          {/* Morphing blob 1 */}
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] opacity-20 pointer-events-none"
             style={{
-              backgroundImage: 'linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)',
-              backgroundSize: '48px 48px',
-            }}
-          />
-        </div>
+              background: 'radial-gradient(circle, #60a5fa, transparent 70%)',
+              animation: 'morphBlob 10s ease-in-out infinite',
+            }} />
 
-        <div className="relative z-10 flex flex-col h-full px-16 py-12 justify-between">
-          
-          {/* Logo */}
-          <div className="flex items-center gap-3 animate-slide-up">
-            <img
-              src="/tekhportal.webp"
-              alt="TekhPortal"
-              className="h-24 w-auto object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
+          {/* Morphing blob 2 */}
+          <div className="absolute -bottom-40 -right-20 w-[600px] h-[600px] opacity-15 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, #a78bfa, transparent 70%)',
+              animation: 'morphBlob 14s ease-in-out infinite reverse',
+            }} />
 
-          {/* Hero Content */}
-          <div className="max-w-xl animate-slide-up delay-75">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 mb-6 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-xs font-bold text-blue-600 tracking-wider uppercase">Next-Gen CRM</span>
+          {/* Dot grid */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)', backgroundSize: '28px 28px'}} />
+
+          {/* Animated scan line */}
+          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300/60 to-transparent pointer-events-none"
+            style={{animation: 'scanLine 6s ease-in-out infinite', animationDelay: '2s'}} />
+
+          {/* Spinning ring decoration */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full border border-white/10 pointer-events-none"
+            style={{animation: 'spinSlow 40s linear infinite'}} />
+
+          {/* Content */}
+          <div className="relative z-10 flex flex-col h-full px-8 py-10 lg:px-16 lg:py-16 justify-between max-w-2xl mx-auto w-full">
+            <div className="animate-fade-in">
+              <img
+                src="/tekhportal.webp"
+                alt="TekhPortal"
+                className="h-10 lg:h-14 w-auto object-contain brightness-0 invert opacity-90"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
             </div>
 
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6 tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Work <span className="text-gradient">smarter</span>,<br />
-              grow faster.
-            </h1>
-            
-            <p className="text-slate-500 text-lg leading-relaxed mb-10 max-w-md">
-              The all-in-one platform to manage your leads, automate conversations, and scale your business with ease.
+            <div className="flex-1 flex flex-col justify-center py-10">
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-bold text-white/90 mb-6 w-fit backdrop-blur-sm shadow-xl">
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                All-in-One Business CRM Suite
+              </div>
+              
+              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-[1.1] mb-6 drop-shadow-lg" style={{letterSpacing: '-0.03em'}}>
+                Work smarter,<br />
+                <span className="text-blue-300">grow faster.</span>
+              </h1>
+              
+              <p className="text-blue-50/90 text-sm lg:text-base xl:text-lg leading-relaxed max-w-md font-medium mb-12 drop-shadow">
+                The unified platform to manage leads, automate marketing, and scale your business — all in one place.
+              </p>
+
+              {/* Live stats bar */}
+              <div className="flex items-center gap-6 lg:gap-10 bg-black/20 border border-white/10 backdrop-blur-md rounded-2xl px-6 py-5 lg:px-8 lg:py-6 w-fit shadow-2xl">
+                <AnimatedCounter to={2400}  label="Leads" suffix="+" />
+                <div className="w-px h-10 bg-white/10" />
+                <AnimatedCounter to={98}    label="Uptime" suffix="%" />
+                <div className="w-px h-10 bg-white/10" />
+                <AnimatedCounter to={340}   label="Users" suffix="+" />
+              </div>
+            </div>
+
+            <p className="text-white/40 text-xs font-medium animate-fade-in">
+              © {new Date().getFullYear()} TekhPortal CRM. Secure & Encrypted.
             </p>
-
-            {/* Floating visual elements representing tools */}
-            <div className="flex items-center gap-4 animate-float">
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-xl border border-slate-100 text-blue-500">
-                <Users size={24} strokeWidth={2.5} />
-              </div>
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-xl border border-slate-100 text-emerald-500 transform translate-y-4">
-                <MessageCircle size={24} strokeWidth={2.5} />
-              </div>
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-xl border border-slate-100 text-violet-500">
-                <Share2 size={24} strokeWidth={2.5} />
-              </div>
-            </div>
           </div>
-
-          <p className="text-sm font-medium text-slate-400 animate-slide-up delay-150">
-            © {new Date().getFullYear()} TekhPortal CRM. All rights reserved.
-          </p>
         </div>
-      </div>
 
-      {/* ── Right panel — Login Form ───────────────── */}
-      <div className="flex-1 lg:max-w-[480px] flex items-center justify-center px-6 py-12 bg-white relative z-20 shadow-2xl">
-        <div className="w-full max-w-sm">
+        {/* ══ RIGHT — Login form ═════════════════════════════════════ */}
+        <div className="flex-1 lg:max-w-[480px] xl:max-w-[560px] flex items-center justify-center p-6 lg:p-12 bg-white shadow-[-20px_0_40px_-10px_rgba(0,0,0,0.1)] relative z-20 min-h-screen md:min-h-0">
+          <div className="w-full max-w-[380px] animate-slide-up">
 
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-10">
-            <img
-              src="/tekhportal.webp"
-              alt="TekhPortal"
-              className="h-8 w-auto object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-            <span className="font-bold text-slate-900 text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>TekhPortal</span>
-          </div>
-
-          {/* Heading */}
-          <div className="mb-8 animate-slide-up">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Sign in to your account
-            </h2>
-            <p className="text-sm text-slate-500">Enter your admin credentials to access the dashboard</p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
-            <div className="animate-slide-up delay-75">
-              <label className="label">Email address</label>
-              <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="input-field pl-10"
-                  required
-                  autoComplete="email"
-                  autoFocus
-                />
-              </div>
+            {/* Mobile logo (Visible only on small screens) */}
+            <div className="flex md:hidden items-center mb-12">
+              <img
+                src="/tekhportal.webp"
+                alt="TekhPortal"
+                className="h-10 w-auto object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
             </div>
 
-            {/* Password */}
-            <div className="animate-slide-up delay-100">
-              <label className="label">Password</label>
-              <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="input-field pl-10 pr-11"
-                  required
-                  autoComplete="current-password"
-                />
+            {/* Heading */}
+            <div className="mb-10">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2" style={{letterSpacing: '-0.03em'}}>
+                Sign in
+              </h2>
+              <p className="text-slate-500 font-medium">
+                Enter your credentials to access your dashboard.
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Email address</label>
+                <div className="relative group">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-blue-600" />
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-slate-300"
+                    required
+                    autoComplete="email"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Password</label>
+                <div className="relative group">
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-blue-600" />
+                  <input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-slate-300"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-4">
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
-                  tabIndex={-1}
+                  id="login-submit"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-blue-600 text-white font-bold text-[15px] shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Signing in…
+                    </span>
+                  ) : (
+                    <>Sign in <ArrowRight size={18} /></>
+                  )}
                 </button>
               </div>
-            </div>
+            </form>
 
-            {/* Submit */}
-            <div className="animate-slide-up delay-150 pt-2">
-              <button
-                id="login-submit"
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full justify-center py-3 text-[15px] shadow-blue-500/20 shadow-lg hover:shadow-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Signing in…
-                  </span>
-                ) : (
-                  <>Sign in <ArrowRight size={16} /></>
-                )}
-              </button>
-            </div>
-          </form>
-
-          <p className="mt-8 text-center text-xs text-slate-500 animate-slide-up delay-200">
-            Secure access · Powered by TekhPortal CRM
-          </p>
+            <p className="mt-10 text-center text-xs font-semibold text-slate-400 uppercase tracking-widest">
+              Secure Access
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
