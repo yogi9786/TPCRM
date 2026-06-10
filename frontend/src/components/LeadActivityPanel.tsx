@@ -218,7 +218,7 @@ export default function LeadActivityPanel({
       await updateDoc(doc(db, 'leads', lead.id), {
         lastContactedAt: now,
         updatedAt: now,
-      })
+      }),
 
       toast.success('Saved successfully ✅')
       setFormTitle('')
