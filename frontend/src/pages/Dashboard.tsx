@@ -59,12 +59,12 @@ function KPICard({ title, value, rawValue, sub, icon: Icon, iconBg, iconColor, a
     >
       {/* Hover shimmer */}
       <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-      
+
       <div className="relative z-10">
         <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110', iconBg)}>
           <Icon size={18} strokeWidth={2} className={iconColor} />
         </div>
-        <p className="text-2xl font-black text-slate-900 tabular-nums transition-all duration-200" style={{letterSpacing: '-0.04em'}}>
+        <p className="text-2xl font-black text-slate-900 tabular-nums transition-all duration-200" style={{ letterSpacing: '-0.04em' }}>
           {displayed}
         </p>
         <p className="text-sm font-semibold text-slate-700 mt-0.5">{title}</p>
@@ -149,14 +149,14 @@ export default function Dashboard() {
 
   const recentLeads = useMemo(() =>
     [...leads].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5)
-  , [leads])
+    , [leads])
 
   const upcomingContent = useMemo(() =>
     contentPlans
       .filter(p => p.scheduledAt && new Date(p.scheduledAt) >= new Date())
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
       .slice(0, 4)
-  , [contentPlans])
+    , [contentPlans])
 
   const statusBadge = (s: string) => ({
     New: 'badge-new', Contacted: 'badge-contacted',
@@ -164,20 +164,20 @@ export default function Dashboard() {
   }[s] || 'badge-new')
 
   const kpis = [
-    { title: 'Total Leads',  rawValue: stats.total,     sub: 'All time',         icon: Users,        iconBg: 'bg-blue-100',    iconColor: 'text-blue-600',    accent: 'border-t-blue-500' },
-    { title: 'New Leads',    rawValue: stats.newLeads,  sub: 'Awaiting contact',  icon: UserPlus,     iconBg: 'bg-violet-100',  iconColor: 'text-violet-600',  accent: 'border-t-violet-500' },
-    { title: 'Contacted',    rawValue: stats.contacted,  sub: 'In progress',       icon: MessageCircle, iconBg: 'bg-amber-100',   iconColor: 'text-amber-600',   accent: 'border-t-amber-500' },
-    { title: 'Qualified',    rawValue: stats.qualified,  sub: 'Ready to close',    icon: TrendingUp,   iconBg: 'bg-pink-100',    iconColor: 'text-pink-600',    accent: 'border-t-pink-500' },
-    { title: 'Closed',       rawValue: stats.closed,    sub: 'Deals won',         icon: CheckCircle2, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', accent: 'border-t-emerald-500' },
-    { title: 'Conversion',   rawValue: conversion,      sub: `${stats.closed} closed`, icon: BarChart3, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', accent: 'border-t-indigo-500', suffix: '%' },
+    { title: 'Total Leads', rawValue: stats.total, sub: 'All time', icon: Users, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', accent: 'border-t-blue-500' },
+    { title: 'New Leads', rawValue: stats.newLeads, sub: 'Awaiting contact', icon: UserPlus, iconBg: 'bg-violet-100', iconColor: 'text-violet-600', accent: 'border-t-violet-500' },
+    { title: 'Contacted', rawValue: stats.contacted, sub: 'In progress', icon: MessageCircle, iconBg: 'bg-amber-100', iconColor: 'text-amber-600', accent: 'border-t-amber-500' },
+    { title: 'Qualified', rawValue: stats.qualified, sub: 'Ready to close', icon: TrendingUp, iconBg: 'bg-pink-100', iconColor: 'text-pink-600', accent: 'border-t-pink-500' },
+    { title: 'Closed', rawValue: stats.closed, sub: 'Deals won', icon: CheckCircle2, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', accent: 'border-t-emerald-500' },
+    { title: 'Conversion', rawValue: conversion, sub: `${stats.closed} closed`, icon: BarChart3, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', accent: 'border-t-indigo-500', suffix: '%' },
   ]
 
   /* Lead stage breakdown for the mini pipeline */
   const stages = [
-    { label: 'New',       count: stats.newLeads,  color: 'bg-blue-500',    pct: stats.total ? (stats.newLeads/stats.total)*100 : 0 },
-    { label: 'Contacted', count: stats.contacted,  color: 'bg-amber-500',   pct: stats.total ? (stats.contacted/stats.total)*100 : 0 },
-    { label: 'Qualified', count: stats.qualified,  color: 'bg-violet-500',  pct: stats.total ? (stats.qualified/stats.total)*100 : 0 },
-    { label: 'Closed',    count: stats.closed,    color: 'bg-emerald-500', pct: stats.total ? (stats.closed/stats.total)*100 : 0 },
+    { label: 'New', count: stats.newLeads, color: 'bg-blue-500', pct: stats.total ? (stats.newLeads / stats.total) * 100 : 0 },
+    { label: 'Contacted', count: stats.contacted, color: 'bg-amber-500', pct: stats.total ? (stats.contacted / stats.total) * 100 : 0 },
+    { label: 'Qualified', count: stats.qualified, color: 'bg-violet-500', pct: stats.total ? (stats.qualified / stats.total) * 100 : 0 },
+    { label: 'Closed', count: stats.closed, color: 'bg-emerald-500', pct: stats.total ? (stats.closed / stats.total) * 100 : 0 },
   ]
 
   return (
@@ -220,7 +220,7 @@ export default function Dashboard() {
         >
           {/* Grid dot pattern */}
           <div className="absolute inset-0 opacity-10"
-            style={{backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '28px 28px'}} />
+            style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '28px 28px' }} />
 
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full pointer-events-none" />
@@ -234,7 +234,7 @@ export default function Dashboard() {
                 TekhPortal CRM
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse ml-0.5" />
               </div>
-              <h1 className="text-2xl md:text-3xl font-black text-white leading-tight" style={{letterSpacing: '-0.04em'}}>
+              <h1 className="text-2xl md:text-3xl font-black text-white leading-tight" style={{ letterSpacing: '-0.04em' }}>
                 Welcome back,{' '}
                 <span className="text-blue-200">{currentUser?.displayName || 'Admin'}</span> 👋
               </h1>
@@ -258,9 +258,9 @@ export default function Dashboard() {
                 </button>
               </div>
               {[
-                { label: 'Total Leads',  val: loading ? '—' : stats.total },
-                { label: 'Conversion',   val: `${conversion}%` },
-                { label: 'Scheduled',    val: upcomingContent.length },
+                { label: 'Total Leads', val: loading ? '—' : stats.total },
+                { label: 'Conversion', val: `${conversion}%` },
+                { label: 'Scheduled', val: upcomingContent.length },
               ].map(s => (
                 <div key={s.label} className="flex justify-between items-baseline">
                   <span className="text-white/50 text-xs">{s.label}</span>
@@ -279,7 +279,7 @@ export default function Dashboard() {
         </div>
 
         {/* ══ PIPELINE BAR ════════════════════════════════════════ */}
-        <div className="card p-5" style={{animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s both'}}>
+        <div className="card p-5" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s both' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="section-title">Lead Pipeline</h2>
             <span className="text-xs font-semibold text-slate-400">{stats.total} total</span>
@@ -299,7 +299,7 @@ export default function Dashboard() {
         </div>
 
         {/* ══ CHARTS ══════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5" style={{animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both'}}>
+        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both' }}>
 
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
@@ -354,7 +354,7 @@ export default function Dashboard() {
         </div>
 
         {/* ══ BOTTOM ROW ══════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5" style={{animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.4s both'}}>
+        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.4s both' }}>
 
           {/* Recent Leads */}
           <div className="card overflow-hidden">

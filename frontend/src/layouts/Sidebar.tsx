@@ -13,19 +13,19 @@ const NAV_GROUPS = [
   {
     label: 'Workspace',
     items: [
-      { to: '/',                icon: LayoutDashboard, label: 'Dashboard',  exact: true },
-      { to: '/crm',             icon: Users,           label: 'CRM Leads' },
+      { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+      { to: '/crm', icon: Users, label: 'CRM Leads' },
     ]
   },
   {
     label: 'Marketing',
     items: [
-      { to: '/campaigns',       icon: Megaphone,       label: 'Campaigns' },
-      { to: '/content-planner', icon: CalendarDays,    label: 'Content Planner' },
-      { to: '/whatsapp',        icon: MessageCircle,   label: 'WhatsApp' },
-      { to: '/email',           icon: Mail,            label: 'Email' },
-      { to: '/meta',            icon: Share2,          label: 'Meta Ads' },
-      { to: '/livechat',        icon: MessageSquare,   label: 'Live Chat' },
+      { to: '/campaigns', icon: Megaphone, label: 'Campaigns' },
+      { to: '/content-planner', icon: CalendarDays, label: 'Content Planner' },
+      { to: '/whatsapp', icon: MessageCircle, label: 'WhatsApp' },
+      { to: '/email', icon: Mail, label: 'Email' },
+      { to: '/meta', icon: Share2, label: 'Meta Ads' },
+      { to: '/livechat', icon: MessageSquare, label: 'Live Chat' },
     ]
   },
 ]

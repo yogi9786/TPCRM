@@ -1,12 +1,4 @@
-// =============================================
-// Campaigns Routes — WhatsApp Broadcast Campaigns
-// GET    /api/campaigns           → List campaigns
-// POST   /api/campaigns           → Create campaign
-// GET    /api/campaigns/:id       → Get campaign
-// PATCH  /api/campaigns/:id       → Update status
-// DELETE /api/campaigns/:id       → Delete campaign
-// POST   /api/campaigns/:id/launch → Launch campaign (sends bulk WhatsApp)
-// =============================================
+
 const express = require('express')
 const router = express.Router()
 const { db } = require('../firebase')
@@ -20,9 +12,7 @@ function getTwilioClient() {
   return twilio(sid, token)
 }
 
-// ─────────────────────────────────────────────
-// GET /api/campaigns
-// ─────────────────────────────────────────────
+
 router.get('/', verifyToken, async (req, res) => {
   if (!db) return res.json({ campaigns: [] })
 
@@ -40,9 +30,6 @@ router.get('/', verifyToken, async (req, res) => {
   }
 })
 
-// ─────────────────────────────────────────────
-// POST /api/campaigns
-// ─────────────────────────────────────────────
 router.post('/', verifyToken, async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not configured' })
 
@@ -69,9 +56,7 @@ router.post('/', verifyToken, async (req, res) => {
   }
 })
 
-// ─────────────────────────────────────────────
-// PATCH /api/campaigns/:id
-// ─────────────────────────────────────────────
+
 router.patch('/:id', verifyToken, async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not configured' })
 
@@ -95,9 +80,7 @@ router.patch('/:id', verifyToken, async (req, res) => {
   }
 })
 
-// ─────────────────────────────────────────────
-// DELETE /api/campaigns/:id
-// ─────────────────────────────────────────────
+
 router.delete('/:id', verifyToken, async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not configured' })
 
@@ -114,10 +97,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
   }
 })
 
-// ─────────────────────────────────────────────
-// POST /api/campaigns/:id/launch
-// Launch a campaign — fetch target leads & send WhatsApp
-// ─────────────────────────────────────────────
+
 router.post('/:id/launch', verifyToken, async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not configured' })
 
@@ -129,7 +109,7 @@ router.post('/:id/launch', verifyToken, async (req, res) => {
 
     const campaign = campaignDoc.data()
 
-    // Fetch target leads
+
     let leadsQuery = db.collection('leads').where('userId', '==', req.user.uid)
     if (campaign.targetStatus && campaign.targetStatus !== 'All') {
       leadsQuery = leadsQuery.where('status', '==', campaign.targetStatus)

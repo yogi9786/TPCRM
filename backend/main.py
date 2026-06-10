@@ -52,6 +52,7 @@ app.include_router(automations.router)
 app.include_router(documents.router)
 
 
+
 @app.get("/", tags=["health"])
 async def root():
     return {

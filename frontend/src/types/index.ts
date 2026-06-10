@@ -5,6 +5,23 @@
 export type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Closed' | 'Lost'
 export type LeadSource = 'Facebook Ads' | 'Instagram Ads' | 'WhatsApp' | 'Website' | 'Referral' | 'Walk-in' | 'Other'
 
+export type ActivityType = 'note' | 'call' | 'whatsapp' | 'email' | 'meeting' | 'response'
+
+export interface LeadActivity {
+  id: string
+  leadId: string
+  type: ActivityType
+  title: string
+  description: string
+  scheduledAt?: string      // ISO datetime string — for meetings
+  durationMinutes?: number  // meeting duration
+  location?: string         // physical or virtual
+
+  isDone: boolean
+  createdAt: string
+  createdBy: string         // user uid
+}
+
 export interface Lead {
   id: string
   fullName: string

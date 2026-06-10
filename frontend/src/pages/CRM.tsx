@@ -11,10 +11,13 @@ import { Lead, LeadStatus, LeadSource } from '../types'
 import {
   Plus, Search, LayoutGrid, List, Trash2,
   Phone, Mail, Edit3, X, ChevronDown, Upload,
-  MessageCircle, Filter, Download, RefreshCw, Users
+  MessageCircle, Filter, Download, RefreshCw, Users, ClipboardList
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import KanbanBoard from '../components/KanbanBoard'
+import EditableCell from '../components/EditableCell'
+import LeadActivityPanel from '../components/LeadActivityPanel'
 
 const STATUSES: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Closed', 'Lost']
 const SOURCES: LeadSource[] = ['Facebook Ads', 'Instagram Ads', 'WhatsApp', 'Website', 'Referral', 'Walk-in', 'Other']
@@ -62,6 +65,7 @@ export default function CRM() {
   const [editLead, setEditLead] = useState<Lead | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [activityLead, setActivityLead] = useState<Lead | null>(null)
 
   // ── Fetch Leads ──────────────────────────────────────────────
   useEffect(() => {
@@ -78,7 +82,7 @@ export default function CRM() {
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([])
 
   function handleToggleSelect(id: string) {
-    setSelectedLeadIds(prev => 
+    setSelectedLeadIds(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     )
   }
@@ -106,16 +110,16 @@ export default function CRM() {
   function parseCSV(text: string) {
     const lines = text.split(/\r?\n/)
     if (lines.length < 2) throw new Error('CSV is empty or missing header/data')
-    
+
     // Parse headers and trim any surrounding spaces/quotes
     const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase())
-    
+
     const results = []
-    
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line) continue
-      
+
       // Simple CSV parser that handles optional quotes
       const values: string[] = []
       let current = ''
@@ -132,7 +136,7 @@ export default function CRM() {
         }
       }
       values.push(current.trim())
-      
+
       const record: any = {}
       headers.forEach((header, index) => {
         const val = values[index]?.replace(/^["']|["']$/g, '').trim() || ''
@@ -145,16 +149,16 @@ export default function CRM() {
         else if (header === 'status') record.status = val
         else if (header === 'notes') record.notes = val
       })
-      
+
       if (!record.fullName && !record.phone) continue // skip empty records
-      
+
       record.fullName = record.fullName || 'Unnamed Lead'
       record.phone = record.phone || ''
       record.email = record.email || ''
       record.companyName = record.companyName || ''
       record.serviceInterested = record.serviceInterested || ''
       record.notes = record.notes || ''
-      
+
       // Map and validate source
       const sourceMap: Record<string, LeadSource> = {
         'facebook ads': 'Facebook Ads',
@@ -170,7 +174,7 @@ export default function CRM() {
       }
       const sLower = (record.leadSource || '').toLowerCase()
       record.leadSource = sourceMap[sLower] || 'Website'
-      
+
       // Map and validate status
       const statusMap: Record<string, LeadStatus> = {
         'new': 'New',
@@ -181,21 +185,21 @@ export default function CRM() {
       }
       const stLower = (record.status || '').toLowerCase()
       record.status = statusMap[stLower] || 'New'
-      
+
       results.push(record)
     }
-    
+
     return results
   }
 
   function handleCSVUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     setImportFile(file)
     setImportError(null)
     setParsedLeads([])
-    
+
     const reader = new FileReader()
     reader.onload = (event) => {
       try {
@@ -222,7 +226,7 @@ export default function CRM() {
     setImporting(true)
     let successCount = 0
     let failCount = 0
-    
+
     try {
       for (const lead of parsedLeads) {
         try {
@@ -246,14 +250,14 @@ export default function CRM() {
           failCount++
         }
       }
-      
+
       if (successCount > 0) {
         toast.success(`Successfully imported ${successCount} leads!`)
       }
       if (failCount > 0) {
         toast.error(`Failed to import ${failCount} leads.`)
       }
-      
+
       setShowImportModal(false)
       setImportFile(null)
       setParsedLeads([])
@@ -355,6 +359,14 @@ export default function CRM() {
     toast.success(`Moved to ${status}`)
   }
 
+  async function handleUpdateField(id: string, field: keyof Lead, value: string) {
+    try {
+      await updateDoc(doc(db, 'leads', id), { [field]: value, updatedAt: new Date().toISOString() })
+    } catch {
+      toast.error('Failed to update field')
+    }
+  }
+
   async function handleBulkDelete() {
     if (!confirm(`Delete ${selectedLeadIds.length} leads?`)) return
     setSaving(true)
@@ -408,12 +420,10 @@ export default function CRM() {
     <MainLayout>
       <div className="space-y-5 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="page-title flex items-center gap-2">
-              <Users className="text-blue-500" size={24} /> CRM Leads
-            </h1>
-            <p className="page-subtitle">{filtered.length} of {leads.length} leads</p>
+            <h1 className="text-2xl font-black text-black tracking-tight">Leads Pipeline</h1>
+            <p className="text-sm text-black opacity-60 font-medium mt-1">Manage and track your incoming leads</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={handleRefresh} className="btn-secondary px-3">
@@ -490,17 +500,19 @@ export default function CRM() {
             <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : view === 'table' ? (
-          <TableView 
-            leads={filtered} 
-            onEdit={openEdit} 
-            onDelete={handleDelete} 
-            onStatusChange={updateStatus} 
+          <TableView
+            leads={filtered}
+            onEdit={openEdit}
+            onDelete={handleDelete}
+            onStatusChange={updateStatus}
+            onUpdateField={handleUpdateField}
+            onActivity={(lead) => setActivityLead(lead)}
             selectedLeadIds={selectedLeadIds}
             onToggleSelect={handleToggleSelect}
             onToggleSelectAll={() => handleToggleSelectAll(filtered)}
           />
         ) : (
-          <KanbanView leads={filtered} onEdit={openEdit} onDelete={handleDelete} onStatusChange={updateStatus} />
+          <KanbanBoard leads={filtered} onEdit={openEdit} onDelete={handleDelete} onStatusChange={updateStatus} onActivity={(lead: Lead) => setActivityLead(lead)} />
         )}
       </div>
 
@@ -566,15 +578,23 @@ export default function CRM() {
         </div>
       )}
 
+      {/* Activity Panel */}
+      {activityLead && (
+        <LeadActivityPanel
+          lead={activityLead}
+          onClose={() => setActivityLead(null)}
+        />
+      )}
+
       {/* Floating Bulk Actions Bar */}
       {selectedLeadIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white border border-slate-200 rounded-2xl px-6 py-4 flex items-center gap-6 shadow-xl backdrop-blur-md animate-slide-up">
           <div className="text-sm font-semibold text-slate-800">
             <span className="text-blue-600">{selectedLeadIds.length}</span> leads selected
           </div>
-          
+
           <div className="h-6 w-px bg-slate-200" />
-          
+
           <div className="flex items-center gap-3">
             {selectedLeadIds.length === 1 ? (
               <>
@@ -622,8 +642,8 @@ export default function CRM() {
               </button>
               <div className="absolute bottom-full left-0 mb-2 w-36 bg-white border border-slate-200 shadow-lg rounded-xl overflow-hidden hidden group-hover:block transition-all z-50">
                 {STATUSES.map(s => (
-                  <button 
-                    key={s} 
+                  <button
+                    key={s}
                     onClick={() => handleBulkStatusChange(s)}
                     className="block w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                   >
@@ -632,14 +652,14 @@ export default function CRM() {
                 ))}
               </div>
             </div>
-            
+
             <button
               onClick={handleBulkDelete}
               className="btn-danger text-xs py-2 px-3.5"
             >
               <Trash2 size={13} /> Delete
             </button>
-            
+
             <button
               onClick={() => setSelectedLeadIds([])}
               className="text-xs py-2 px-3.5 text-slate-500 hover:text-slate-800 transition-colors font-medium ml-2"
@@ -654,7 +674,7 @@ export default function CRM() {
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="glass-card w-full max-w-xl p-6 space-y-5 animate-slide-up border-slate-200 shadow-2xl relative overflow-hidden">
-            
+
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
@@ -663,13 +683,13 @@ export default function CRM() {
                   Import Leads from CSV
                 </h2>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setShowImportModal(false)
                   setImportFile(null)
                   setParsedLeads([])
                   setImportError(null)
-                }} 
+                }}
                 className="text-slate-500 hover:text-slate-900 transition-colors"
                 disabled={importing}
               >
@@ -681,19 +701,19 @@ export default function CRM() {
             <div className="bg-white/50 rounded-xl p-4 border border-slate-200 text-xs text-slate-500 space-y-2">
               <p className="font-semibold text-slate-700">CSV Columns Supported:</p>
               <p className="leading-relaxed">
-                <code className="text-sky-300 font-mono">Name</code> (Required), 
-                <code className="text-sky-300 font-mono"> Phone</code> (Required), 
-                <code className="text-sky-300 font-mono"> Email</code>, 
-                <code className="text-sky-300 font-mono"> Company</code>, 
-                <code className="text-sky-300 font-mono"> Source</code>, 
-                <code className="text-sky-300 font-mono"> Service</code>, 
-                <code className="text-sky-300 font-mono"> Status</code>, 
+                <code className="text-sky-300 font-mono">Name</code> (Required),
+                <code className="text-sky-300 font-mono"> Phone</code> (Required),
+                <code className="text-sky-300 font-mono"> Email</code>,
+                <code className="text-sky-300 font-mono"> Company</code>,
+                <code className="text-sky-300 font-mono"> Source</code>,
+                <code className="text-sky-300 font-mono"> Service</code>,
+                <code className="text-sky-300 font-mono"> Status</code>,
                 <code className="text-sky-300 font-mono"> Notes</code>
               </p>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-2 gap-2 border-t border-slate-200">
                 <span>Headers must match the names listed above.</span>
-                <button 
-                  onClick={downloadSampleCSV} 
+                <button
+                  onClick={downloadSampleCSV}
                   type="button"
                   className="text-blue-700 hover:text-sky-300 font-semibold flex items-center gap-1.5 transition-colors hover:underline"
                 >
@@ -705,8 +725,8 @@ export default function CRM() {
             {/* Drag and Drop / Input Area */}
             {!importFile ? (
               <div className="border-2 border-dashed border-slate-200 hover:border-sky-500/50 rounded-xl p-8 flex flex-col items-center justify-center transition-all bg-white/20 cursor-pointer relative group">
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept=".csv"
                   onChange={handleCSVUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -729,7 +749,7 @@ export default function CRM() {
                     </div>
                   </div>
                   {!importing && (
-                    <button 
+                    <button
                       onClick={() => {
                         setImportFile(null)
                         setParsedLeads([])
@@ -793,21 +813,21 @@ export default function CRM() {
 
             {/* Actions */}
             <div className="flex gap-3 justify-end border-t border-slate-200 pt-4">
-              <button 
+              <button
                 onClick={() => {
                   setShowImportModal(false)
                   setImportFile(null)
                   setParsedLeads([])
                   setImportError(null)
-                }} 
+                }}
                 className="btn-secondary"
                 disabled={importing}
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmImport} 
-                disabled={importing || parsedLeads.length === 0} 
+              <button
+                onClick={confirmImport}
+                disabled={importing || parsedLeads.length === 0}
                 className="btn-primary"
               >
                 {importing ? (
@@ -827,14 +847,16 @@ export default function CRM() {
 // ─────────────────────────────────────────────
 // Table View
 // ─────────────────────────────────────────────
-function TableView({ 
-  leads, onEdit, onDelete, onStatusChange,
+function TableView({
+  leads, onEdit, onDelete, onStatusChange, onUpdateField, onActivity,
   selectedLeadIds, onToggleSelect, onToggleSelectAll
 }: {
   leads: Lead[]
   onEdit: (l: Lead) => void
   onDelete: (id: string) => void
   onStatusChange: (id: string, s: LeadStatus) => void
+  onUpdateField: (id: string, field: keyof Lead, value: string) => void
+  onActivity: (l: Lead) => void
   selectedLeadIds: string[]
   onToggleSelect: (id: string) => void
   onToggleSelectAll: () => void
@@ -842,91 +864,156 @@ function TableView({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   if (leads.length === 0) return (
-    <div className="glass-card flex flex-col items-center justify-center h-64 text-slate-500">
-      <List size={36} className="mb-3 opacity-30" />
-      <p className="font-medium">No leads found</p>
-      <p className="text-sm mt-1">Try adjusting your search or add a new lead</p>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center h-64">
+      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <List size={28} className="text-slate-400" />
+      </div>
+      <p className="font-bold text-slate-700">No leads found</p>
+      <p className="text-sm text-slate-400 mt-1">Try adjusting your search or add a new lead</p>
     </div>
   )
 
   return (
-    <div className="glass-card overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200">
-            <tr>
-              <th className="table-header w-10">
-                <input 
-                  type="checkbox" 
+          <thead>
+            <tr className="bg-gradient-to-r from-slate-50 to-slate-100/60 border-b-2 border-slate-200">
+              <th className="px-4 py-3.5 w-10">
+                <input
+                  type="checkbox"
                   checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
                   onChange={onToggleSelectAll}
-                  className="rounded border-slate-200 bg-white/50 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                 />
               </th>
-              {['Name', 'Phone', 'Email', 'Source', 'Service', 'Status', 'Actions'].map(h => (
-                <th key={h} className="table-header whitespace-nowrap">{h}</th>
+              {['Lead', 'Phone', 'Email', 'Source', 'Service', 'Status', 'Actions'].map(h => (
+                <th key={h} className="px-4 py-3.5 text-left text-[11px] font-extrabold text-black uppercase tracking-widest whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
-            {leads.map(lead => (
-              <tr key={lead.id} className={clsx('hover:bg-white/40 transition-colors group relative', selectedLeadIds.includes(lead.id) && 'bg-blue-50/30', openDropdown === lead.id && 'z-[50]')}>
-                <td className="table-cell w-10">
-                  <input 
-                    type="checkbox" 
+          <tbody>
+            {leads.map((lead, i) => (
+              <tr
+                key={lead.id}
+                className={clsx(
+                  'group relative transition-colors duration-150 border-b border-slate-100 last:border-0',
+                  selectedLeadIds.includes(lead.id)
+                    ? 'bg-blue-50/60'
+                    : 'bg-white hover:bg-slate-50/80',
+                  openDropdown === lead.id && 'z-[50]'
+                )}
+              >
+                {/* Checkbox */}
+                <td className="px-4 py-4 w-10">
+                  <input
+                    type="checkbox"
                     checked={selectedLeadIds.includes(lead.id)}
                     onChange={() => onToggleSelect(lead.id)}
-                    className="rounded border-slate-200 bg-white/50 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                   />
                 </td>
-                <td className="table-cell">
+
+                {/* Name + company */}
+                <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-slate-200/50 flex items-center justify-center text-xs font-bold text-slate-700 flex-shrink-0">
-                      {lead.fullName?.charAt(0) ?? '?'}
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm shadow-blue-500/30">
+                      {lead.fullName?.charAt(0)?.toUpperCase() ?? '?'}
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900">{lead.fullName}</p>
-                      {lead.companyName && <p className="text-xs text-slate-500 font-medium">{lead.companyName}</p>}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-black text-sm leading-tight">
+                        <EditableCell value={lead.fullName} onSave={v => onUpdateField(lead.id, 'fullName', v)} placeholder="Name" />
+                      </div>
+                      <div className="text-xs text-black opacity-80 font-semibold mt-0.5">
+                        <EditableCell value={lead.companyName || ''} onSave={v => onUpdateField(lead.id, 'companyName', v)} placeholder="Company" />
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="table-cell">
-                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-blue-700 hover:text-blue-500 font-medium transition-colors">
-                    <Phone size={13} />
-                    {lead.phone}
-                  </a>
+
+                {/* Phone */}
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <Phone size={11} className="text-blue-600" />
+                    </div>
+                    <div className="text-black font-semibold text-[13px]">
+                      <EditableCell value={lead.phone} onSave={v => onUpdateField(lead.id, 'phone', v)} placeholder="Phone" />
+                    </div>
+                  </div>
                 </td>
-                <td className="table-cell">
-                  {lead.email ? (
-                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-slate-600 hover:text-blue-700 font-medium transition-colors truncate max-w-[180px]">
-                      <Mail size={13} />
-                      {lead.email}
-                    </a>
-                  ) : <span className="text-slate-400">—</span>}
+
+                {/* Email */}
+                <td className="px-4 py-4 max-w-[160px]">
+                  <div className="flex items-center gap-2 w-full">
+                    <div className="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center flex-shrink-0">
+                      <Mail size={11} className="text-violet-600" />
+                    </div>
+                    <div className="text-black font-medium text-[13px] flex-1 min-w-0">
+                      <EditableCell value={lead.email || ''} onSave={v => onUpdateField(lead.id, 'email', v)} placeholder="Email" />
+                    </div>
+                  </div>
                 </td>
-                <td className="table-cell">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100/80 border border-slate-200/50 text-slate-700">
-                    {lead.leadSource}
-                  </span>
+
+                {/* Source */}
+                <td className="px-4 py-4">
+                  {(() => {
+                    const src = lead.leadSource || ''
+                    const srcStyles: Record<string, string> = {
+                      'Facebook Ads': 'bg-blue-100 text-blue-700 border-blue-200',
+                      'Instagram Ads': 'bg-pink-100 text-pink-700 border-pink-200',
+                      'WhatsApp': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                      'Website': 'bg-violet-100 text-violet-700 border-violet-200',
+                      'Referral': 'bg-amber-100 text-amber-700 border-amber-200',
+                      'Walk-in': 'bg-orange-100 text-orange-700 border-orange-200',
+                      'Other': 'bg-slate-100 text-slate-600 border-slate-200',
+                    }
+                    const style = srcStyles[src] || srcStyles['Other']
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${style}`}>
+                        {src}
+                      </span>
+                    )
+                  })()}
                 </td>
-                <td className="px-4 py-3.5 text-slate-500 max-w-[160px] truncate">{lead.serviceInterested || '—'}</td>
-                <td className="px-4 py-3.5">
+
+                {/* Service */}
+                <td className="px-4 py-4 max-w-[150px]">
+                  <div className="text-black font-medium text-[13px]">
+                    <EditableCell value={lead.serviceInterested || ''} onSave={v => onUpdateField(lead.id, 'serviceInterested', v)} placeholder="Service" />
+                  </div>
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-4">
                   <div className="relative">
                     <button
                       onClick={() => setOpenDropdown(openDropdown === lead.id ? null : lead.id)}
-                      className={clsx(STATUS_STYLE[lead.status], 'cursor-pointer flex items-center gap-1 hover:opacity-80 transition-opacity')}
+                      className={clsx(STATUS_STYLE[lead.status], 'cursor-pointer flex items-center gap-1.5 hover:opacity-90 transition-all hover:scale-105 active:scale-95')}
                     >
                       {lead.status}
-                      <ChevronDown size={11} />
+                      <ChevronDown size={10} className="opacity-70" />
                     </button>
                     {openDropdown === lead.id && (
-                      <div className="absolute z-[99] top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1 min-w-[130px]">
+                      <div className="absolute z-[99] top-full left-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1 min-w-[140px]">
                         {STATUSES.map(s => (
                           <button
                             key={s}
                             onClick={() => { onStatusChange(lead.id, s); setOpenDropdown(null) }}
-                            className="w-full text-left px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-700 transition-colors"
+                            className={clsx(
+                              'w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2',
+                              s === lead.status
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'text-slate-700 hover:bg-slate-50'
+                            )}
                           >
+                            <span className={clsx(
+                              'w-1.5 h-1.5 rounded-full flex-shrink-0',
+                              s === 'New' ? 'bg-slate-400' :
+                                s === 'Contacted' ? 'bg-blue-500' :
+                                  s === 'Qualified' ? 'bg-violet-500' :
+                                    s === 'Closed' ? 'bg-emerald-500' : 'bg-red-500'
+                            )} />
                             {s}
                           </button>
                         ))}
@@ -934,22 +1021,39 @@ function TableView({
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                {/* Actions — always partially visible, fully visible on hover */}
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
                     <a
                       href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                      className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-150 hover:scale-105 active:scale-95"
                       title="Open WhatsApp"
                     >
-                      <MessageCircle size={15} />
+                      <MessageCircle size={13} />
                     </a>
-                    <button onClick={() => onEdit(lead)} className="p-1.5 rounded-lg text-blue-700 hover:bg-sky-500/10 transition-colors" title="Edit">
-                      <Edit3 size={15} />
+                    <button
+                      onClick={() => onActivity(lead)}
+                      className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all duration-150 hover:scale-105 active:scale-95"
+                      title="Activities & Meetings"
+                    >
+                      <ClipboardList size={13} />
                     </button>
-                    <button onClick={() => onDelete(lead.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
-                      <Trash2 size={15} />
+                    <button
+                      onClick={() => onEdit(lead)}
+                      className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-150 hover:scale-105 active:scale-95"
+                      title="Edit"
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(lead.id)}
+                      className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-150 hover:scale-105 active:scale-95"
+                      title="Delete"
+                    >
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </td>
@@ -958,68 +1062,6 @@ function TableView({
           </tbody>
         </table>
       </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Kanban View
-// ─────────────────────────────────────────────
-function KanbanView({ leads, onEdit, onDelete, onStatusChange }: {
-  leads: Lead[]
-  onEdit: (l: Lead) => void
-  onDelete: (id: string) => void
-  onStatusChange: (id: string, s: LeadStatus) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 overflow-x-auto">
-      {KANBAN_COLS.map(col => {
-        const colLeads = leads.filter(l => l.status === col)
-        return (
-          <div key={col} className={`glass-card p-4 border-t-2 ${KANBAN_COLORS[col]} min-h-[400px]`}>
-            <div className="flex items-center justify-between mb-4">
-              <span className={STATUS_STYLE[col as LeadStatus]}>{col}</span>
-              <span className="text-xs text-slate-500 font-medium">{colLeads.length}</span>
-            </div>
-            <div className="space-y-3">
-              {colLeads.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-slate-700">
-                  <p className="text-xs">No leads</p>
-                </div>
-              )}
-              {colLeads.map(lead => (
-                <div key={lead.id} className="bg-white/60 backdrop-blur-md border border-white/60 shadow-[0_4px_12px_rgb(0,0,0,0.02)] rounded-xl p-3.5 space-y-2 hover:border-slate-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgb(0,0,0,0.06)] transition-all duration-300 cursor-pointer group">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-bold text-slate-900 leading-tight">{lead.fullName}</p>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button onClick={() => onEdit(lead)} className="p-1.5 rounded-lg text-blue-700 hover:bg-blue-500/10 transition-colors"><Edit3 size={13} /></button>
-                      <button onClick={() => onDelete(lead.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 size={13} /></button>
-                    </div>
-                  </div>
-                  {lead.companyName && <p className="text-xs font-medium text-slate-600">{lead.companyName}</p>}
-                  <p className="text-xs font-semibold text-blue-700">{lead.phone}</p>
-                  <p className="text-[11px] text-slate-500 truncate font-medium">{lead.serviceInterested}</p>
-                  <div className="flex items-center justify-between pt-1.5">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100/80 border border-slate-200/50">{lead.leadSource}</span>
-                    <div className="flex gap-1">
-                      {STATUSES.filter(s => s !== lead.status && s !== 'Lost').map(s => (
-                        <button
-                          key={s}
-                          onClick={() => onStatusChange(lead.id, s)}
-                          className="text-[10px] text-slate-500 hover:text-blue-700 transition-colors"
-                          title={`Move to ${s}`}
-                        >
-                          →{s.charAt(0)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
     </div>
   )
 }
