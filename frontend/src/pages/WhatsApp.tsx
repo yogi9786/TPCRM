@@ -31,7 +31,10 @@ export default function WhatsApp() {
     return saved ? JSON.parse(saved) : DEFAULT_TEMPLATES
   })
   const [showTemplateModal, setShowTemplateModal] = useState(false)
-  const [newTemplate, setNewTemplate]   = useState({ name: '', body: '' })
+  const [newTemplate, setNewTemplate]   = useState({ name: '', body: '', imageUrl: '' })
+  const [templateFile, setTemplateFile] = useState<File | null>(null)
+  const [attachmentUrl, setAttachmentUrl] = useState('')
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
 
   useEffect(() => {
     localStorage.setItem('whatsapp_templates', JSON.stringify(templates))
@@ -99,17 +102,44 @@ export default function WhatsApp() {
     if (tab === 'logs') fetchLogs()
   }, [tab])
 
-  function applyTemplate(t: typeof DEFAULT_TEMPLATES[0]) {
+  function applyTemplate(t: typeof DEFAULT_TEMPLATES[0] & { imageUrl?: string }) {
     setSelectedTemplate(t.id)
     setMessage(t.body)
+    if (t.imageUrl) {
+      setAttachmentUrl(t.imageUrl)
+    } else {
+      setAttachmentUrl('')
+      setAttachmentFile(null)
+    }
   }
 
-  function handleSaveTemplate() {
+  async function handleSaveTemplate() {
     if (!newTemplate.name || !newTemplate.body) return toast.error('Name and body are required')
-    setTemplates([...templates, { id: Date.now().toString(), name: newTemplate.name, body: newTemplate.body }])
-    setNewTemplate({ name: '', body: '' })
-    setShowTemplateModal(false)
-    toast.success('Template saved!')
+    setSending(true) // Reusing sending state for loading
+    try {
+      let finalImageUrl = newTemplate.imageUrl
+      if (templateFile) {
+        if (templateFile.size > 10 * 1024 * 1024) {
+          toast.error('Image exceeds 10MB limit')
+          setSending(false)
+          return
+        }
+        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+        const { storage } = await import('../firebase')
+        const fileRef = ref(storage, `templates/${currentUser!.uid}/${Date.now()}_${templateFile.name}`)
+        await uploadBytes(fileRef, templateFile)
+        finalImageUrl = await getDownloadURL(fileRef)
+      }
+      setTemplates([...templates, { id: Date.now().toString(), name: newTemplate.name, body: newTemplate.body, imageUrl: finalImageUrl }])
+      setNewTemplate({ name: '', body: '', imageUrl: '' })
+      setTemplateFile(null)
+      setShowTemplateModal(false)
+      toast.success('Template saved!')
+    } catch (e) {
+      toast.error('Failed to save template')
+    } finally {
+      setSending(false)
+    }
   }
 
   // ── Send WhatsApp message via backend ────────────────────────────────────
@@ -118,6 +148,20 @@ export default function WhatsApp() {
     if (!message.trim()) return toast.error('Enter a message')
     setSending(true)
     try {
+      let finalAttachmentUrl = attachmentUrl
+      if (attachmentFile) {
+        if (attachmentFile.size > 10 * 1024 * 1024) {
+          toast.error('Attachment exceeds 10MB limit')
+          setSending(false)
+          return
+        }
+        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+        const { storage } = await import('../firebase')
+        const fileRef = ref(storage, `whatsapp/${currentUser!.uid}/${Date.now()}_${attachmentFile.name}`)
+        await uploadBytes(fileRef, attachmentFile)
+        finalAttachmentUrl = await getDownloadURL(fileRef)
+      }
+
       const token = await currentUser?.getIdToken?.()
       const res = await fetch(`${API}/whatsapp/send`, {
         method: 'POST',
@@ -129,6 +173,7 @@ export default function WhatsApp() {
           to: phone.trim(),
           body: message.trim(),
           lead_id: '',
+          media_url: finalAttachmentUrl || undefined
         }),
       })
 
@@ -176,6 +221,8 @@ export default function WhatsApp() {
       setName('')
       setMessage('')
       setSelectedTemplate('')
+      setAttachmentUrl('')
+      setAttachmentFile(null)
     } catch (err: unknown) {
       let msg = 'Failed to send message'
       if (err instanceof Error) {
@@ -293,7 +340,10 @@ export default function WhatsApp() {
                             e.stopPropagation()
                             if (confirm('Delete this template?')) {
                               setTemplates(templates.filter((tmpl: any) => tmpl.id !== t.id))
-                              if (selectedTemplate === t.id) setSelectedTemplate('')
+                              if (selectedTemplate === t.id) {
+                                setSelectedTemplate('')
+                                setAttachmentUrl('')
+                              }
                             }
                           }}
                           className="text-slate-500 hover:text-red-500"
@@ -357,6 +407,29 @@ export default function WhatsApp() {
                 <p className="text-[11px] text-slate-600 mt-1">{message.length} characters</p>
               </div>
 
+              <div>
+                <label className="label">Attachment Image (Optional)</label>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    onChange={e => setAttachmentFile(e.target.files?.[0] || null)}
+                  />
+                  {!attachmentFile && attachmentUrl && (
+                    <div className="relative w-24 h-24 mt-2">
+                      <img src={attachmentUrl} alt="Attachment" className="w-full h-full object-cover rounded-xl border border-slate-200" />
+                      <button 
+                        onClick={() => setAttachmentUrl('')} 
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <button
                 id="whatsapp-send-btn"
                 onClick={sendMessage}
@@ -409,8 +482,8 @@ export default function WhatsApp() {
                 <p className="text-sm mt-1">Send your first WhatsApp message</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[700px] text-sm">
                   <thead className="border-b border-slate-200">
                     <tr>
                       {['Phone', 'Message', 'Direction', 'Status', 'Time'].map(h => (
@@ -513,9 +586,20 @@ export default function WhatsApp() {
               />
               <p className="text-[11px] text-slate-500 mt-1">Use {'{{name}}'}, {'{{service}}'} for variables.</p>
             </div>
+            <div>
+              <label className="label">Header Image (Optional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                onChange={e => setTemplateFile(e.target.files?.[0] || null)}
+              />
+            </div>
             <div className="flex gap-3 justify-end pt-2">
               <button onClick={() => setShowTemplateModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleSaveTemplate} className="btn-primary">Save Template</button>
+              <button onClick={handleSaveTemplate} disabled={sending} className="btn-primary">
+                {sending ? 'Saving...' : 'Save Template'}
+              </button>
             </div>
           </div>
         </div>

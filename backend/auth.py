@@ -47,7 +47,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @router.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@tekhportal.com")
+    admin_email = os.getenv("ADMIN_EMAIL", "tekhportal@gmail.com")
     admin_password = os.getenv("ADMIN_PASSWORD", "Admin@123")
 
     if form_data.username != admin_email or form_data.password != admin_password:
@@ -59,7 +59,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": admin_email, "uid": "demo-admin-uid", "role": "admin"},
+        data={"sub": admin_email, "uid": "tekhportal-admin-uid", "role": "admin"},
         expires_delta=access_token_expires
     )
     
@@ -70,7 +70,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             from services.firebase_service import get_firebase_app
             get_firebase_app()
             
-            custom_token_bytes = firebase_auth.create_custom_token("demo-admin-uid")
+            custom_token_bytes = firebase_auth.create_custom_token("tekhportal-admin-uid")
             firebase_token = custom_token_bytes.decode("utf-8")
         except Exception as e:
             print(f"Warning: Failed to generate Firebase custom token: {e}")
@@ -80,8 +80,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         "token_type": "bearer",
         "firebase_token": firebase_token,
         "user": {
-            "uid": "demo-admin-uid",
+            "uid": "tekhportal-admin-uid",
             "email": admin_email,
-            "displayName": "Demo Admin"
+            "displayName": "TekhPortal Admin"
         }
     }

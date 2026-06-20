@@ -9,7 +9,8 @@ import {
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase'
 import { useNavigate } from 'react-router-dom'
 
 const API = 'https://tpcrm.onrender.com'
@@ -63,6 +64,7 @@ export default function Email() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([])
   const [showEditLead, setShowEditLead] = useState(false)
   const [editLeadForm, setEditLeadForm] = useState<any>(null)
@@ -160,6 +162,27 @@ export default function Email() {
       return
     }
     setSending(true)
+
+    let attachmentUrl = ''
+    let attachmentName = ''
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Attachment exceeds 10MB limit')
+        setSending(false)
+        return
+      }
+      try {
+        const fileRef = ref(storage, `emails/${currentUser!.uid}/${Date.now()}_${file.name}`)
+        await uploadBytes(fileRef, file)
+        attachmentUrl = await getDownloadURL(fileRef)
+        attachmentName = file.name
+      } catch (e) {
+        toast.error('Failed to upload attachment')
+        setSending(false)
+        return
+      }
+    }
+
     const emailsToSend = compose.toEmail.split(',').map(e => e.trim()).filter(e => e)
     let successCount = 0
 
@@ -178,6 +201,8 @@ export default function Email() {
             subject: compose.subject,
             html_content: htmlContent,
             text_content: compose.body,
+            attachment_url: attachmentUrl || undefined,
+            attachment_name: attachmentName || undefined,
           }),
         })
         if (res.status === 401) {
@@ -192,6 +217,7 @@ export default function Email() {
       if (successCount > 0) {
         toast.success(`Sent emails to ${successCount} recipients!`)
         setCompose({ toEmail: '', toName: '', subject: '', body: '', isHtml: false })
+        setFile(null)
         setTab('sent')
       } else {
         toast.error('Failed to send emails')
@@ -349,8 +375,8 @@ export default function Email() {
                 <p className="font-semibold text-slate-700">No leads available</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[700px] text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50">
                     <tr>
                       <th className="px-4 py-3.5 text-left w-10">
@@ -501,6 +527,19 @@ export default function Email() {
               />
             </div>
 
+            <div>
+              <label className="label flex items-center gap-1.5">
+                <Paperclip size={13} className="text-slate-500" /> Attachment (optional, max 10MB)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  onChange={e => setFile(e.target.files?.[0] || null)}
+                />
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleSend}
@@ -514,7 +553,7 @@ export default function Email() {
                 )}
               </button>
               <button
-                onClick={() => setCompose({ toEmail: '', toName: '', subject: '', body: '', isHtml: false })}
+                onClick={() => { setCompose({ toEmail: '', toName: '', subject: '', body: '', isHtml: false }); setFile(null); }}
                 className="btn-secondary"
               >
                 <X size={14} /> Clear
@@ -614,8 +653,8 @@ export default function Email() {
                 <p className="text-xs mt-1">Send an email first to see delivery status here.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[500px] text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
                       <th className="text-left px-4 py-3">To</th>

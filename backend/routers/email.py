@@ -21,6 +21,8 @@ class EmailSendRequest(BaseModel):
     text_content: Optional[str] = ""
     reply_to: Optional[str] = None
     lead_id: Optional[str] = None  
+    attachment_url: Optional[str] = None
+    attachment_name: Optional[str] = None
 
 
 class EmailChatMessage(BaseModel):
@@ -44,6 +46,8 @@ async def send_transactional_email(
         html_content=req.html_content,
         text_content=req.text_content or "",
         reply_to=req.reply_to,
+        attachment_url=req.attachment_url,
+        attachment_name=req.attachment_name,
     )
 
     if not result.get("success"):
@@ -64,6 +68,8 @@ async def send_transactional_email(
         "direction": "outbound",
         "brevoMessageId": result.get("messageId", ""),
         "status": "sent",
+        "attachmentUrl": req.attachment_url,
+        "attachmentName": req.attachment_name,
         "createdAt": datetime.utcnow().isoformat(),
     }
     db.collection("emails").add(doc)

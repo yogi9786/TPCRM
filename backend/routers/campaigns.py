@@ -7,8 +7,10 @@ from datetime import datetime
 from models.campaign import CampaignCreate, CampaignUpdate, BroadcastRequest
 from services.firebase_service import get_db
 from services.twilio_service import send_bulk_messages
+from services.email_service import send_email
 from auth import get_current_user
 from typing import Optional
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
@@ -69,6 +71,7 @@ async def get_campaign(campaign_id: str, user: dict = Depends(get_current_user))
     return {"id": doc.id, **doc.to_dict()}
 
 
+@router.put("/{campaign_id}")
 @router.patch("/{campaign_id}")
 async def update_campaign(campaign_id: str, update: CampaignUpdate, user: dict = Depends(get_current_user)):
     """Update campaign fields."""
@@ -144,9 +147,9 @@ async def launch_campaign(campaign_id: str, user: dict = Depends(get_current_use
     target_source = campaign.get("targetSource", "All")
 
     if target_status and target_status != "All":
-        leads_ref = leads_ref.where("status", "==", target_status)
+        leads_ref = leads_ref.where(filter=FieldFilter("status", "==", target_status))
     if target_source and target_source != "All":
-        leads_ref = leads_ref.where("leadSource", "==", target_source)
+        leads_ref = leads_ref.where(filter=FieldFilter("leadSource", "==", target_source))
 
     leads = [{"id": d.id, **d.to_dict()} for d in leads_ref.stream()]
     if not leads:
@@ -159,12 +162,37 @@ async def launch_campaign(campaign_id: str, user: dict = Depends(get_current_use
         "startedAt": datetime.utcnow().isoformat(),
     })
 
-    # Collect phone numbers
-    phone_numbers = [lead.get("phone") for lead in leads if lead.get("phone")]
-
-    # Send WhatsApp messages
+    campaign_type = campaign.get("campaignType", "whatsapp_broadcast")
     message = campaign.get("message", "")
-    results = send_bulk_messages(phone_numbers, message)
+    attachment_url = campaign.get("attachmentUrl")
+    attachment_name = campaign.get("attachmentName")
+
+    results = {"sent": 0, "failed": 0}
+    emails_processed = []
+
+    if campaign_type == "email_blast":
+        valid_leads = [lead for lead in leads if lead.get("email")]
+        for lead in valid_leads:
+            email = lead.get("email")
+            name = lead.get("full_name") or lead.get("name") or "User"
+            res = send_email(
+                to_email=email,
+                to_name=name,
+                subject=campaign.get("name", "Update from TekhPortal"),
+                html_content=f"<p>{message.replace(chr(10), '<br>')}</p>",
+                text_content=message,
+                attachment_url=attachment_url,
+                attachment_name=attachment_name
+            )
+            if res.get("success"):
+                results["sent"] += 1
+            else:
+                results["failed"] += 1
+            emails_processed.append(email)
+    else:
+        # Collect phone numbers for WhatsApp
+        phone_numbers = [lead.get("phone") for lead in leads if lead.get("phone")]
+        results = send_bulk_messages(phone_numbers, message, media_url=attachment_url)
 
     # Update final stats
     doc_ref.update({
@@ -177,16 +205,28 @@ async def launch_campaign(campaign_id: str, user: dict = Depends(get_current_use
     # Log activity for each lead
     now = datetime.utcnow().isoformat()
     for lead in leads:
-        phone = lead.get("phone", "")
-        if phone and phone in phone_numbers:
-            db.collection("lead_activities").add({
-                "leadId": lead["id"],
-                "type": "campaign_sent",
-                "title": f"Campaign '{campaign.get('name', '')}' sent",
-                "description": f"WhatsApp message sent via campaign '{campaign.get('name', '')}'",
-                "metadata": {"campaignId": campaign_id, "phone": phone},
-                "createdAt": now,
-            })
+        if campaign_type == "email_blast":
+            email = lead.get("email", "")
+            if email and email in emails_processed:
+                db.collection("lead_activities").add({
+                    "leadId": lead["id"],
+                    "type": "email_sent",
+                    "title": f"Email Campaign '{campaign.get('name', '')}' sent",
+                    "description": f"Email sent via campaign '{campaign.get('name', '')}'",
+                    "metadata": {"campaignId": campaign_id, "email": email},
+                    "createdAt": now,
+                })
+        else:
+            phone = lead.get("phone", "")
+            if phone and phone in phone_numbers:
+                db.collection("lead_activities").add({
+                    "leadId": lead["id"],
+                    "type": "campaign_sent",
+                    "title": f"Campaign '{campaign.get('name', '')}' sent",
+                    "description": f"WhatsApp message sent via campaign '{campaign.get('name', '')}'",
+                    "metadata": {"campaignId": campaign_id, "phone": phone},
+                    "createdAt": now,
+                })
 
     return {
         "success": True,

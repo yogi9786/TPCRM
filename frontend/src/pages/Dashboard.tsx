@@ -13,6 +13,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import MainLayout from '../layouts/MainLayout'
+import PageHeader from '../components/PageHeader'
 import { Lead } from '../types'
 import clsx from 'clsx'
 
@@ -40,9 +41,9 @@ function useAnimatedCounter(target: number, duration = 900) {
 /* ─────────────────────────────────────────────────────────────
    Animated KPI card
 ───────────────────────────────────────────────────────────── */
-function KPICard({ title, value, rawValue, sub, icon: Icon, iconBg, iconColor, accent, suffix = '', delay = 0 }: {
+function KPICard({ title, value, rawValue, sub, icon: Icon, iconBg, iconColor, accentColor, suffix = '', delay = 0 }: {
   title: string; value?: string | number; rawValue: number; sub: string
-  icon: React.ElementType; iconBg: string; iconColor: string; accent: string
+  icon: React.ElementType; iconBg: string; iconColor: string; accentColor: string
   suffix?: string; delay?: number
 }) {
   const counted = useAnimatedCounter(rawValue, 800 + delay * 50)
@@ -50,25 +51,22 @@ function KPICard({ title, value, rawValue, sub, icon: Icon, iconBg, iconColor, a
 
   return (
     <div
-      className={clsx(
-        'card p-5 border-t-[3px] cursor-default group overflow-hidden relative',
-        'transition-all duration-200 ease-out hover:-translate-y-1.5 hover:shadow-lg hover:shadow-slate-200/80',
-        accent
-      )}
-      style={{ animation: `slideUp 0.5s cubic-bezier(0.16,1,0.3,1) ${delay * 80}ms both` }}
+      className="card p-5 cursor-default group overflow-hidden relative"
+      style={{
+        animation: `slideUp 0.5s cubic-bezier(0.16,1,0.3,1) ${delay * 80}ms both`,
+        borderLeft: `4px solid ${accentColor}`,
+        transition: 'all 0.2s ease-out',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(16,15,136,0.14)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '' }}
     >
-      {/* Hover shimmer */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-
       <div className="relative z-10">
-        <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110', iconBg)}>
-          <Icon size={18} strokeWidth={2} className={iconColor} />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110" style={{ background: iconBg }}>
+          <Icon size={18} strokeWidth={2} style={{ color: iconColor }} />
         </div>
-        <p className="text-2xl font-black text-slate-900 tabular-nums transition-all duration-200" style={{ letterSpacing: '-0.04em' }}>
-          {displayed}
-        </p>
-        <p className="text-sm font-semibold text-slate-700 mt-0.5">{title}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+        <p className="text-2xl font-black tabular-nums" style={{ letterSpacing: '-0.04em', color: '#0d0c50' }}>{displayed}</p>
+        <p className="text-sm font-semibold mt-0.5" style={{ color: '#0d0c50' }}>{title}</p>
+        <p className="text-xs mt-0.5" style={{ color: '#9896cc' }}>{sub}</p>
       </div>
     </div>
   )
@@ -96,7 +94,7 @@ const leadTrendData = [
   { day: 'Sat', leads: 34, contacted: 25 },
   { day: 'Sun', leads: 18, contacted: 13 },
 ]
-const PIE_COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444']
+const PIE_COLORS = ['#100F88', '#FFC263', '#10b981', '#7c3aed', '#ef4444']
 
 /* ─────────────────────────────────────────────────────────────
    Dashboard
@@ -164,112 +162,39 @@ export default function Dashboard() {
   }[s] || 'badge-new')
 
   const kpis = [
-    { title: 'Total Leads', rawValue: stats.total, sub: 'All time', icon: Users, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', accent: 'border-t-blue-500' },
-    { title: 'New Leads', rawValue: stats.newLeads, sub: 'Awaiting contact', icon: UserPlus, iconBg: 'bg-violet-100', iconColor: 'text-violet-600', accent: 'border-t-violet-500' },
-    { title: 'Contacted', rawValue: stats.contacted, sub: 'In progress', icon: MessageCircle, iconBg: 'bg-amber-100', iconColor: 'text-amber-600', accent: 'border-t-amber-500' },
-    { title: 'Qualified', rawValue: stats.qualified, sub: 'Ready to close', icon: TrendingUp, iconBg: 'bg-pink-100', iconColor: 'text-pink-600', accent: 'border-t-pink-500' },
-    { title: 'Closed', rawValue: stats.closed, sub: 'Deals won', icon: CheckCircle2, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', accent: 'border-t-emerald-500' },
-    { title: 'Conversion', rawValue: conversion, sub: `${stats.closed} closed`, icon: BarChart3, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', accent: 'border-t-indigo-500', suffix: '%' },
+    { title: 'Total Leads',  rawValue: stats.total,     sub: 'All time',         icon: Users,        iconBg: 'rgba(16,15,136,0.08)',  iconColor: '#100F88',   accentColor: '#100F88' },
+    { title: 'New Leads',    rawValue: stats.newLeads,  sub: 'Awaiting contact', icon: UserPlus,     iconBg: 'rgba(255,194,99,0.15)', iconColor: '#f0a832',   accentColor: '#FFC263' },
+    { title: 'Contacted',    rawValue: stats.contacted, sub: 'In progress',      icon: MessageCircle,iconBg: 'rgba(16,185,129,0.10)', iconColor: '#059669',   accentColor: '#10b981' },
+    { title: 'Qualified',    rawValue: stats.qualified, sub: 'Ready to close',   icon: TrendingUp,   iconBg: 'rgba(124,58,237,0.10)', iconColor: '#7c3aed',   accentColor: '#7c3aed' },
+    { title: 'Closed',       rawValue: stats.closed,    sub: 'Deals won',        icon: CheckCircle2, iconBg: 'rgba(16,185,129,0.10)', iconColor: '#059669',   accentColor: '#059669' },
+    { title: 'Conversion',   rawValue: conversion,      sub: `${stats.closed} closed`, icon: BarChart3, iconBg: 'rgba(16,15,136,0.08)', iconColor: '#100F88', accentColor: '#FFC263', suffix: '%' },
   ]
 
   /* Lead stage breakdown for the mini pipeline */
   const stages = [
-    { label: 'New', count: stats.newLeads, color: 'bg-blue-500', pct: stats.total ? (stats.newLeads / stats.total) * 100 : 0 },
-    { label: 'Contacted', count: stats.contacted, color: 'bg-amber-500', pct: stats.total ? (stats.contacted / stats.total) * 100 : 0 },
-    { label: 'Qualified', count: stats.qualified, color: 'bg-violet-500', pct: stats.total ? (stats.qualified / stats.total) * 100 : 0 },
-    { label: 'Closed', count: stats.closed, color: 'bg-emerald-500', pct: stats.total ? (stats.closed / stats.total) * 100 : 0 },
+    { label: 'New',       count: stats.newLeads,  color: '#100F88',  pct: stats.total ? (stats.newLeads  / stats.total) * 100 : 0 },
+    { label: 'Contacted', count: stats.contacted, color: '#FFC263',  pct: stats.total ? (stats.contacted / stats.total) * 100 : 0 },
+    { label: 'Qualified', count: stats.qualified, color: '#7c3aed',  pct: stats.total ? (stats.qualified / stats.total) * 100 : 0 },
+    { label: 'Closed',    count: stats.closed,    color: '#10b981',  pct: stats.total ? (stats.closed    / stats.total) * 100 : 0 },
   ]
 
   return (
     <MainLayout>
-      <style>{`
-        @keyframes gradientShift {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes heroSlideIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes floatBadge {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-6px); }
-        }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); }
-          50%       { box-shadow: 0 0 20px 4px rgba(96,165,250,0.25); }
-        }
-        .hero-enter { animation: heroSlideIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
-        .hero-enter-delay-1 { animation: heroSlideIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
-        .hero-enter-delay-2 { animation: heroSlideIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
-        .float-badge { animation: floatBadge 3s ease-in-out infinite; }
-        .pulse-glow  { animation: pulseGlow 3s ease-in-out infinite; }
-      `}</style>
-
       <div className="space-y-6">
 
-        {/* ══ HERO ════════════════════════════════════════════════ */}
-        <div
-          className="rounded-2xl p-6 md:p-8 text-white relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 40%, #2563eb 65%, #4338ca 100%)',
-            backgroundSize: '300% 300%',
-            animation: 'gradientShift 10s ease infinite',
-          }}
-        >
-          {/* Grid dot pattern */}
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '28px 28px' }} />
-
-          {/* Decorative circles */}
-          <div className="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full pointer-events-none" />
-          <div className="absolute -bottom-16 right-40 w-48 h-48 bg-white/5 rounded-full pointer-events-none" />
-          <div className="absolute top-6 right-6 w-24 h-24 bg-white/5 rounded-full pointer-events-none pulse-glow" />
-
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className={heroVisible ? 'hero-enter' : 'opacity-0'}>
-              <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-3.5 py-1.5 text-xs font-bold mb-3 float-badge">
-                <Zap size={11} className="text-yellow-300" />
-                TekhPortal CRM
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse ml-0.5" />
-              </div>
-              <h1 className="text-2xl md:text-3xl font-black text-white leading-tight" style={{ letterSpacing: '-0.04em' }}>
-                Welcome back,{' '}
-                <span className="text-blue-200">{currentUser?.displayName || 'Admin'}</span> 👋
-              </h1>
-              <p className="text-blue-100/70 text-sm font-medium mt-2 max-w-md">
-                {stats.newLeads > 0
-                  ? `You have ${stats.newLeads} new leads waiting. Let's convert them!`
-                  : 'Everything looks great. Keep up the momentum!'}
-              </p>
-            </div>
-
-            {/* Mini stats card */}
-            <div
-              className={`bg-white/10 border border-white/15 rounded-2xl p-5 min-w-[200px] space-y-3 ${heroVisible ? 'hero-enter-delay-1' : 'opacity-0'}`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-white/60 text-xs font-bold flex items-center gap-1.5">
-                  <Activity size={10} /> Live
-                </span>
-                <button onClick={handleRefresh} className="text-white/40 hover:text-white transition-colors">
-                  <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : 'transition-transform hover:rotate-180 duration-500'} />
-                </button>
-              </div>
-              {[
-                { label: 'Total Leads', val: loading ? '—' : stats.total },
-                { label: 'Conversion', val: `${conversion}%` },
-                { label: 'Scheduled', val: upcomingContent.length },
-              ].map(s => (
-                <div key={s.label} className="flex justify-between items-baseline">
-                  <span className="text-white/50 text-xs">{s.label}</span>
-                  <span className="text-white font-bold text-sm tabular-nums">{s.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* ══ PAGE HEADER ════════════════════════════════════════ */}
+        <PageHeader
+          title={`Welcome back, ${currentUser?.displayName || 'Admin'} 👋`}
+          subtitle={stats.newLeads > 0 ? `${stats.newLeads} new leads waiting — let's convert them!` : 'Everything looks great. Keep up the momentum!'}
+          icon={<Zap size={20} />}
+          badge="TekhPortal CRM"
+          actions={
+            <button onClick={handleRefresh} className="btn-accent">
+              <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          }
+        />
 
         {/* ══ KPI GRID ════════════════════════════════════════════ */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -285,16 +210,18 @@ export default function Dashboard() {
             <span className="text-xs font-semibold text-slate-400">{stats.total} total</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stages.map(s => (
+          {stages.map(s => (
               <div key={s.label} className="group cursor-default">
                 <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-xs font-bold text-slate-500">{s.label}</span>
-                  <span className="text-sm font-black text-slate-900 tabular-nums">{s.count}</span>
+                  <span className="text-xs font-bold" style={{ color: '#5a5898' }}>{s.label}</span>
+                  <span className="text-sm font-black tabular-nums" style={{ color: '#0d0c50' }}>{s.count}</span>
                 </div>
-                <AnimatedBar pct={s.pct} color={s.color} />
-                <p className="text-[10px] text-slate-400 mt-1 font-semibold">{Math.round(s.pct)}%</p>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: '#e4e4f0' }}>
+                  <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${s.pct}%`, background: s.color }} />
+                </div>
+                <p className="text-[10px] mt-1 font-semibold" style={{ color: '#9896cc' }}>{Math.round(s.pct)}%</p>
               </div>
-            ))}
+          ))}
           </div>
         </div>
 
@@ -314,17 +241,17 @@ export default function Dashboard() {
             </div>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={leadTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e4e4f0" />
+                <XAxis dataKey="day" tick={{ fill: '#9896cc', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#9896cc', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 13, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
-                  labelStyle={{ color: '#0f172a', fontWeight: 700 }}
+                  contentStyle={{ background: '#fff', border: '1px solid #d8d8ee', borderRadius: 12, fontSize: 13, boxShadow: '0 4px 20px rgba(16,15,136,0.10)' }}
+                  labelStyle={{ color: '#0d0c50', fontWeight: 700 }}
                 />
-                <Line type="monotone" dataKey="leads" stroke="#2563eb" strokeWidth={2.5}
-                  dot={{ fill: '#2563eb', r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#1d4ed8' }} name="New Leads" />
-                <Line type="monotone" dataKey="contacted" stroke="#7c3aed" strokeWidth={2.5}
-                  dot={{ fill: '#7c3aed', r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#6d28d9' }} name="Contacted" />
+                <Line type="monotone" dataKey="leads" stroke="#100F88" strokeWidth={2.5}
+                  dot={{ fill: '#100F88', r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#0c0b6e' }} name="New Leads" />
+                <Line type="monotone" dataKey="contacted" stroke="#FFC263" strokeWidth={2.5}
+                  dot={{ fill: '#FFC263', r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#f0a832' }} name="Contacted" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -360,7 +287,7 @@ export default function Dashboard() {
           <div className="card overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="section-title">Recent Leads</h2>
-              <a href="/crm" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors group">
+              <a href="/crm" className="inline-flex items-center gap-1 text-xs font-bold hover:underline transition-colors group" style={{ color: '#100F88' }}>
                 View all <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </div>
@@ -382,7 +309,7 @@ export default function Dashboard() {
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 group-hover:scale-110 transition-transform duration-200" style={{ background: 'linear-gradient(135deg, #100F88, #1a19c0)' }}>
                         {lead.fullName?.charAt(0) ?? '?'}
                       </div>
                       <div className="min-w-0">

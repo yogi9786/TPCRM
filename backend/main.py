@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config import ALLOWED_ORIGINS
-from routers import leads, whatsapp, meta, campaigns, email as email_router, content_plans, deals, tasks, automations, documents
+from routers import leads, whatsapp, meta, campaigns, email as email_router, content_plans, deals, tasks, automations, documents, team, clients
 from auth import router as auth_router, get_current_user
 
 import os
@@ -51,6 +51,8 @@ app.include_router(deals.router)
 app.include_router(tasks.router)
 app.include_router(automations.router)
 app.include_router(documents.router)
+app.include_router(team.router)
+app.include_router(clients.router)
 
 
 

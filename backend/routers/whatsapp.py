@@ -20,7 +20,7 @@ async def send_message(req: SendMessageRequest, user: dict = Depends(get_current
     """
     db = get_db()
 
-    result = send_whatsapp_message(req.to, req.body)
+    result = send_whatsapp_message(req.to, req.body, req.media_url)
 
     
     msg_data = {

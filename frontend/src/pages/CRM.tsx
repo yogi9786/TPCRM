@@ -534,8 +534,8 @@ export default function CRM() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-lg p-6 space-y-5 animate-slide-up border-slate-200">
-            <div className="flex items-center justify-between">
+          <div className="glass-card w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-5 animate-slide-up border-slate-200">
+            <div className="flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md pb-2 z-10 border-b border-slate-100 mb-2 -mt-2 pt-2">
               <h2 className="text-lg font-bold text-slate-900 font-display">
                 {editLead ? 'Edit Lead' : 'Add New Lead'}
               </h2>
@@ -577,7 +577,7 @@ export default function CRM() {
                 <label className="label">Service Interested</label>
                 <input className="input-field" placeholder="e.g. WhatsApp Marketing, SEO..." value={form.serviceInterested} onChange={e => setForm(f => ({ ...f, serviceInterested: e.target.value }))} />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="label">Notes</label>
                 <textarea className="input-field resize-none" rows={3} placeholder="Any additional notes..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
@@ -685,13 +685,11 @@ export default function CRM() {
         </div>
       )}
 
-      {/* Import CSV Modal */}
+      {/* ── Import Modal ──────────────────────────────────────────────────────── */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-xl p-6 space-y-5 animate-slide-up border-slate-200 shadow-2xl relative overflow-hidden">
-
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="glass-card w-[95vw] sm:max-w-xl max-h-[85vh] overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-5 animate-slide-up">
+            <div className="flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md pb-2 z-10 border-b border-slate-100 mb-2 -mt-2 pt-2">
               <div className="flex items-center gap-2">
                 <Upload className="text-blue-700" size={18} />
                 <h2 className="text-lg font-bold text-slate-900 font-display">
@@ -890,8 +888,8 @@ function TableView({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full min-w-[1000px] text-sm">
           <thead>
             <tr className="bg-gradient-to-r from-slate-50 to-slate-100/60 border-b-2 border-slate-200">
               <th className="px-4 py-3.5 w-10">

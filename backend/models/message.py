@@ -20,6 +20,7 @@ class SendMessageRequest(BaseModel):
     to: str  
     body: str
     lead_id: Optional[str] = None
+    media_url: Optional[str] = None
 
 
 class MessageResponse(BaseModel):

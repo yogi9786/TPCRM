@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import MainLayout from '../layouts/MainLayout'
+import PageHeader from '../components/PageHeader'
 import { Settings as SettingsIcon, Save, Key, Bell, Shield, Webhook, Eye, EyeOff, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -47,26 +48,40 @@ export default function Settings() {
   return (
     <MainLayout>
       <div className="space-y-5 animate-fade-in">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <SettingsIcon className="text-slate-500" size={24} /> Settings
-          </h1>
-          <p className="page-subtitle">Configure API integrations, notifications & security</p>
-        </div>
+        <PageHeader
+          title="Settings"
+          subtitle="Configure API integrations, notifications & security"
+          icon={<SettingsIcon size={20} />}
+          badge="Configuration"
+          actions={
+            <button onClick={saveSettings} disabled={saving} className="btn-accent">
+              {saving ? (
+                <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Saving...</>
+              ) : (
+                <><Save size={15} /> Save Settings</>
+              )}
+            </button>
+          }
+        />
 
         <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr] gap-5">
           {/* Sidebar */}
-          <div className="glass-card p-3 h-fit space-y-1">
+          <div className="card p-3 h-fit space-y-1">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id as typeof tab)}
                 className={clsx(
-                  'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all',
+                  'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all',
                   tab === id
-                    ? 'bg-sky-500/10 text-blue-700 border border-sky-500/20'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-white'
+                    : 'hover:bg-[#f0f0f9]'
                 )}
+                style={tab === id ? {
+                  background: 'linear-gradient(135deg, #100F88, #1a19c0)',
+                  color: 'white',
+                  boxShadow: '0 2px 10px rgba(16,15,136,0.30)',
+                } : { color: '#5a5898' }}
               >
                 <Icon size={15} />
                 {label}
@@ -293,7 +308,7 @@ export default function Settings() {
             )}
 
             {/* Save Button */}
-            <div className="pt-4 border-t border-slate-200">
+            <div className="pt-4 border-t" style={{ borderColor: '#e4e4f0' }}>
               <button onClick={saveSettings} disabled={saving} className="btn-primary">
                 {saving ? (
                   <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Saving...</>

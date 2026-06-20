@@ -243,9 +243,9 @@ def verify_firebase_token(id_token: str) -> dict:
     """Verify a Firebase ID token. Mock token accepted for local dev."""
     if id_token == "mock-jwt-token-xyz":
         return {
-            "uid": "demo-admin-uid",
-            "email": os.getenv("ADMIN_EMAIL", "admin@tekhportal.com"),
-            "name": "Demo Admin",
+            "uid": "tekhportal-admin-uid",
+            "email": os.getenv("ADMIN_EMAIL", "tekhportal@gmail.com"),
+            "name": "TekhPortal Admin",
         }
 
     if not _FIREBASE_AVAILABLE:

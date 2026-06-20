@@ -97,7 +97,7 @@ export default function Deals() {
         </div>
 
         {/* Kanban Board */}
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
           {STAGES.map(stage => {
             const stageDeals = filtered.filter(d => d.stage === stage)
             const stageTotal = stageDeals.reduce((sum, d) => sum + Number(d.value), 0)
@@ -145,13 +145,13 @@ export default function Deals() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-5 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)}>
+          <div className="glass-card w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto custom-scrollbar animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-10">
               <h2 className="font-bold text-lg">{editItem ? 'Edit Deal' : 'New Deal'}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-4 sm:p-5 space-y-4">
               <div><label className="label">Title</label><input className="input-field" value={form.title} onChange={e=>setForm({...form, title: e.target.value})} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Value ($)</label><input type="number" className="input-field" value={form.value} onChange={e=>setForm({...form, value: Number(e.target.value)})} /></div>
@@ -160,7 +160,7 @@ export default function Deals() {
               <div><label className="label">Expected Close Date</label><input type="date" className="input-field" value={form.expectedCloseDate} onChange={e=>setForm({...form, expectedCloseDate: e.target.value})} /></div>
               <div><label className="label">Notes</label><textarea className="textarea-field" rows={3} value={form.notes} onChange={e=>setForm({...form, notes: e.target.value})} /></div>
             </div>
-            <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 z-10">
               <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={save} className="btn-primary">Save Deal</button>
             </div>

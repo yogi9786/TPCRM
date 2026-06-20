@@ -20,7 +20,7 @@ def format_whatsapp_number(phone: str) -> str:
     return cleaned
 
 
-def send_whatsapp_message(to: str, body: str) -> dict:
+def send_whatsapp_message(to: str, body: str, media_url: str = None) -> dict:
     """
     Send a WhatsApp message via Twilio.
     Returns message SID and status.
@@ -29,11 +29,15 @@ def send_whatsapp_message(to: str, body: str) -> dict:
     to_wa = format_whatsapp_number(to)
     
     try:
-        message = client.messages.create(
-            body=body,
-            from_=TWILIO_WHATSAPP_NUMBER,
-            to=to_wa
-        )
+        kwargs = {
+            "body": body,
+            "from_": TWILIO_WHATSAPP_NUMBER,
+            "to": to_wa
+        }
+        if media_url:
+            kwargs["media_url"] = [media_url]
+            
+        message = client.messages.create(**kwargs)
         return {
             "success": True,
             "sid": message.sid,
@@ -48,12 +52,12 @@ def send_whatsapp_message(to: str, body: str) -> dict:
         }
 
 
-def send_bulk_messages(phone_numbers: list[str], body: str) -> dict:
+def send_bulk_messages(phone_numbers: list[str], body: str, media_url: str = None) -> dict:
     """Send message to multiple WhatsApp numbers."""
     results = {"sent": 0, "failed": 0, "errors": []}
     
     for phone in phone_numbers:
-        result = send_whatsapp_message(phone, body)
+        result = send_whatsapp_message(phone, body, media_url)
         if result["success"]:
             results["sent"] += 1
         else:

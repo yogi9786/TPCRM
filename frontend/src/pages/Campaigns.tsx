@@ -3,12 +3,13 @@ import MainLayout from '../layouts/MainLayout'
 import {
   Megaphone, Plus, Play, Pause, Trash2, Users, CheckCheck, Send, X,
   Clock, MessageCircle, Share2, RefreshCw, BarChart2, Calendar,
-  ChevronDown, AlertCircle, Loader2, Zap, Target
+  ChevronDown, AlertCircle, Loader2, Zap, Target, Edit, Paperclip
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 
 const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
@@ -23,9 +24,10 @@ const STATUS_STYLE: Record<string, string> = {
 }
 
 const TYPE_STYLE: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  whatsapp_broadcast: { label: 'WhatsApp Broadcast', icon: <MessageCircle size={12} />, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-  meta_retarget: { label: 'Meta Retarget', icon: <Share2 size={12} />, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  email_blast: { label: 'Email Blast', icon: <Send size={12} />, color: 'text-violet-600 bg-violet-50 border-violet-200' },
+  whatsapp_broadcast: { label: 'WhatsApp Campaign', icon: <MessageCircle size={12} />, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  instagram_campaign: { label: 'Instagram Campaign', icon: <Share2 size={12} />, color: 'text-pink-600 bg-pink-50 border-pink-200' },
+  facebook_campaign: { label: 'Facebook Campaign', icon: <Share2 size={12} />, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  email_blast: { label: 'Email Campaign', icon: <Send size={12} />, color: 'text-violet-600 bg-violet-50 border-violet-200' },
 }
 
 const TARGET_STATUSES = ['All', 'New', 'Contacted', 'Qualified', 'Closed', 'Lost']
@@ -38,6 +40,8 @@ const EMPTY_FORM = {
   targetSource: 'All',
   campaignType: 'whatsapp_broadcast',
   scheduledAt: '',
+  attachmentUrl: '',
+  attachmentName: '',
 }
 
 export default function Campaigns() {
@@ -46,10 +50,15 @@ export default function Campaigns() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showLaunchModal, setShowLaunchModal] = useState<string | null>(null)
+  
   const [form, setForm] = useState(EMPTY_FORM)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null)
+  
   const [saving, setSaving] = useState(false)
   const [launching, setLaunching] = useState<string | null>(null)
   const [filterType, setFilterType] = useState('all')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   useEffect(() => {
     if (!currentUser) return
@@ -63,32 +72,84 @@ export default function Campaigns() {
     return unsub
   }, [currentUser])
 
-  async function createCampaign() {
+  async function createOrUpdateCampaign() {
     if (!form.name.trim() || !form.message.trim()) return toast.error('Name and message required')
     setSaving(true)
     try {
+      let attachmentUrl = form.attachmentUrl
+      let attachmentName = form.attachmentName
+
+      if (file) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error('Attachment exceeds 10MB limit')
+          setSaving(false)
+          return
+        }
+        const fileRef = ref(storage, `campaigns/${currentUser!.uid}/${Date.now()}_${file.name}`)
+        await uploadBytes(fileRef, file)
+        attachmentUrl = await getDownloadURL(fileRef)
+        attachmentName = file.name
+      }
+
       const status = form.scheduledAt ? 'scheduled' : 'draft'
-      await addDoc(collection(db, 'campaigns'), {
+      const payload = {
         ...form,
+        attachmentUrl,
+        attachmentName,
         scheduledAt: form.scheduledAt || null,
-        status,
-        targetCount: 0,
-        sentCount: 0,
-        deliveredCount: 0,
-        readCount: 0,
-        failedCount: 0,
-        userId: currentUser!.uid,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-      toast.success(status === 'scheduled' ? '📅 Campaign scheduled!' : '✅ Campaign created as draft!')
-      setShowModal(false)
-      setForm(EMPTY_FORM)
+      }
+
+      if (editingId) {
+        await updateDoc(doc(db, 'campaigns', editingId), {
+          ...payload,
+          status,
+          updatedAt: new Date().toISOString(),
+        })
+        toast.success('✅ Campaign updated!')
+      } else {
+        await addDoc(collection(db, 'campaigns'), {
+          ...payload,
+          status,
+          targetCount: 0,
+          sentCount: 0,
+          deliveredCount: 0,
+          readCount: 0,
+          failedCount: 0,
+          userId: currentUser!.uid,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        toast.success(status === 'scheduled' ? '📅 Campaign scheduled!' : '✅ Campaign created as draft!')
+      }
+      closeModal()
     } catch {
-      toast.error('Failed to create campaign')
+      toast.error('Failed to save campaign')
     } finally {
       setSaving(false)
     }
+  }
+
+  function openEditModal(c: any) {
+    setEditingId(c.id)
+    setForm({
+      name: c.name || '',
+      message: c.message || '',
+      targetStatus: c.targetStatus || 'All',
+      targetSource: c.targetSource || 'All',
+      campaignType: c.campaignType || 'whatsapp_broadcast',
+      scheduledAt: c.scheduledAt || '',
+      attachmentUrl: c.attachmentUrl || '',
+      attachmentName: c.attachmentName || '',
+    })
+    setFile(null)
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setForm(EMPTY_FORM)
+    setEditingId(null)
+    setFile(null)
   }
 
   async function launchCampaign(campaignId: string) {
@@ -121,7 +182,56 @@ export default function Campaigns() {
   async function deleteCampaign(id: string) {
     if (!confirm('Delete this campaign?')) return
     await deleteDoc(doc(db, 'campaigns', id))
+    setSelectedIds(prev => prev.filter(x => x !== id))
     toast.success('Campaign deleted')
+  }
+
+  // Bulk actions
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.length === filtered.length && filtered.length > 0) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(filtered.map(c => c.id))
+    }
+  }
+
+  async function bulkDelete() {
+    if (!confirm(`Delete ${selectedIds.length} campaigns?`)) return
+    try {
+      await Promise.all(selectedIds.map(id => deleteDoc(doc(db, 'campaigns', id))))
+      toast.success('Campaigns deleted')
+      setSelectedIds([])
+    } catch {
+      toast.error('Failed to delete some campaigns')
+    }
+  }
+
+  async function bulkLaunch() {
+    const drafts = campaigns.filter(c => selectedIds.includes(c.id) && c.status === 'draft')
+    if (drafts.length === 0) return toast.error('No draft campaigns selected')
+    if (!confirm(`Launch ${drafts.length} draft campaigns immediately?`)) return
+    
+    let success = 0
+    let fail = 0
+    for (const d of drafts) {
+      try {
+        const token = await currentUser!.getIdToken()
+        const res = await fetch(`${API}/campaigns/${d.id}/launch`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        })
+        if (res.ok) success++
+        else fail++
+      } catch {
+        fail++
+      }
+    }
+    toast.success(`Launched ${success} campaigns. ${fail > 0 ? `${fail} failed.` : ''}`)
+    setSelectedIds([])
   }
 
   const filtered = filterType === 'all' ? campaigns : campaigns.filter(c => c.campaignType === filterType)
@@ -163,18 +273,22 @@ export default function Campaigns() {
         </div>
 
         {/* Filter tabs */}
-        <div className="flex gap-1 border-b border-slate-200">
+        <div className="flex gap-1 border-b border-slate-200 overflow-x-auto pb-1 no-scrollbar">
           {[
             { id: 'all', label: 'All', icon: <Megaphone size={13} /> },
             { id: 'whatsapp_broadcast', label: 'WhatsApp', icon: <MessageCircle size={13} /> },
-            { id: 'meta_retarget', label: 'Meta Retarget', icon: <Share2 size={13} /> },
+            { id: 'instagram_campaign', label: 'Instagram', icon: <Share2 size={13} /> },
+            { id: 'facebook_campaign', label: 'Facebook', icon: <Share2 size={13} /> },
             { id: 'email_blast', label: 'Email', icon: <Send size={13} /> },
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setFilterType(tab.id)}
+              onClick={() => {
+                setFilterType(tab.id)
+                setSelectedIds([]) // clear selection on tab change
+              }}
               className={clsx(
-                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap',
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-[5px] transition-colors whitespace-nowrap',
                 filterType === tab.id
                   ? 'border-orange-500 text-orange-700'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
@@ -184,6 +298,24 @@ export default function Campaigns() {
             </button>
           ))}
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-50 border border-blue-200 p-3 rounded-xl gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-blue-800 text-sm">{selectedIds.length} campaigns selected</span>
+              <button onClick={() => setSelectedIds([])} className="text-xs text-blue-600 hover:underline">Clear</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={bulkDelete} className="btn-danger text-xs py-1.5 px-3">
+                <Trash2 size={13} className="inline mr-1" /> Bulk Delete
+              </button>
+              <button onClick={bulkLaunch} className="btn-primary text-xs py-1.5 px-3 bg-blue-600 hover:bg-blue-700 border-none">
+                <Play size={13} className="inline mr-1" /> Launch Selected Drafts
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Campaigns list */}
         {loading ? (
@@ -201,6 +333,17 @@ export default function Campaigns() {
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Select All Checkbox */}
+            <div className="flex items-center gap-2 px-2 text-sm text-slate-500">
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                checked={selectedIds.length === filtered.length && filtered.length > 0}
+                onChange={toggleSelectAll}
+              />
+              <span className="cursor-pointer" onClick={toggleSelectAll}>Select All</span>
+            </div>
+
             {filtered.map((c: any) => {
               const typeInfo = TYPE_STYLE[c.campaignType] || TYPE_STYLE.whatsapp_broadcast
               const isLaunching = launching === c.id
@@ -208,100 +351,115 @@ export default function Campaigns() {
               const deliveryPct = c.sentCount > 0 ? Math.round((c.deliveredCount || c.sentCount) / c.sentCount * 100) : 0
 
               return (
-                <div key={c.id} className="glass-card p-5 border border-slate-200 hover:border-slate-300 transition-colors">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      {/* Title row */}
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-semibold text-slate-900">{c.name}</p>
-                        <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold', STATUS_STYLE[c.status] || STATUS_STYLE.draft)}>
-                          {c.status === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
-                          {c.status}
-                        </span>
-                        <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border', typeInfo.color)}>
-                          {typeInfo.icon} {typeInfo.label}
-                        </span>
-                      </div>
-
-                      {/* Message preview */}
-                      <p className="text-xs text-slate-500 truncate mb-2 max-w-2xl">{c.message}</p>
-
-                      {/* Target info */}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Target size={11} />
-                          Target: {c.targetStatus !== 'All' ? c.targetStatus : 'All'} leads
-                          {c.targetSource && c.targetSource !== 'All' && ` from ${c.targetSource}`}
-                        </span>
-                        <span className="flex items-center gap-1"><Users size={11} /> {c.targetCount} targeted</span>
-                        <span className="flex items-center gap-1"><Send size={11} /> {c.sentCount} sent</span>
-                        <span className="flex items-center gap-1"><CheckCheck size={11} /> {c.deliveredCount || 0} delivered</span>
-                        {c.scheduledAt && (
-                          <span className="flex items-center gap-1 text-violet-600 font-medium">
-                            <Clock size={11} /> Scheduled: {new Date(c.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                <div key={c.id} className={clsx(
+                  "glass-card p-4 sm:p-5 border transition-colors",
+                  selectedIds.includes(c.id) ? "border-blue-400 bg-blue-50/30" : "border-slate-200 hover:border-slate-300"
+                )}>
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0" 
+                      checked={selectedIds.includes(c.id)}
+                      onChange={() => toggleSelect(c.id)}
+                    />
+                    
+                    <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        {/* Title row */}
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-semibold text-slate-900">{c.name}</p>
+                          <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold', STATUS_STYLE[c.status] || STATUS_STYLE.draft)}>
+                            {c.status === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
+                            {c.status}
                           </span>
+                          <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border', typeInfo.color)}>
+                            {typeInfo.icon} {typeInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Message preview */}
+                        <p className="text-xs text-slate-500 truncate mb-2 max-w-2xl">{c.message}</p>
+
+                        {/* Target info */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-3">
+                          <span className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <Target size={11} />
+                            Target: {c.targetStatus !== 'All' ? c.targetStatus : 'All'}
+                            {c.targetSource && c.targetSource !== 'All' && ` | ${c.targetSource}`}
+                          </span>
+                          <span className="flex items-center gap-1"><Users size={11} /> {c.targetCount} targeted</span>
+                          <span className="flex items-center gap-1"><Send size={11} /> {c.sentCount} sent</span>
+                          <span className="flex items-center gap-1"><CheckCheck size={11} /> {c.deliveredCount || 0} delivered</span>
+                          {c.scheduledAt && (
+                            <span className="flex items-center gap-1 text-violet-600 font-medium">
+                              <Clock size={11} /> Scheduled: {new Date(c.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Delivery progress bar */}
+                        {c.sentCount > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[11px] text-slate-500">
+                              <span>Delivery progress</span>
+                              <span className="font-semibold text-emerald-600">{deliveryPct}%</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
+                                style={{ width: `${deliveryPct}%` }}
+                              />
+                            </div>
+                            <div className="flex gap-4 text-[10px] text-slate-400 pt-0.5">
+                              <span className="text-blue-600 font-semibold">{c.sentCount} sent</span>
+                              <span className="text-emerald-600 font-semibold">{c.deliveredCount || 0} delivered</span>
+                              <span className="text-purple-600 font-semibold">{c.readCount || 0} read</span>
+                              {c.failedCount > 0 && <span className="text-red-500 font-semibold">{c.failedCount} failed</span>}
+                            </div>
+                          </div>
                         )}
                       </div>
 
-                      {/* Delivery progress bar */}
-                      {c.sentCount > 0 && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[11px] text-slate-500">
-                            <span>Delivery progress</span>
-                            <span className="font-semibold text-emerald-600">{deliveryPct}%</span>
-                          </div>
-                          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
-                              style={{ width: `${deliveryPct}%` }}
-                            />
-                          </div>
-                          <div className="flex gap-4 text-[10px] text-slate-400 pt-0.5">
-                            <span className="text-blue-600 font-semibold">{c.sentCount} sent</span>
-                            <span className="text-emerald-600 font-semibold">{c.deliveredCount || 0} delivered</span>
-                            <span className="text-purple-600 font-semibold">{c.readCount || 0} read</span>
-                            {c.failedCount > 0 && <span className="text-red-500 font-semibold">{c.failedCount} failed</span>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {c.status === 'draft' && (
-                        <button
-                          onClick={() => setShowLaunchModal(c.id)}
-                          disabled={isLaunching}
-                          className="btn-primary py-2 text-xs"
-                        >
-                          {isLaunching
-                            ? <><Loader2 size={12} className="animate-spin" /> Launching…</>
-                            : <><Play size={12} /> Launch</>
-                          }
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:flex-shrink-0">
+                        <button onClick={() => openEditModal(c)} className="btn-secondary py-2 px-2.5 text-xs">
+                          <Edit size={13} /> Edit
                         </button>
-                      )}
-                      {c.status === 'scheduled' && (
-                        <button
-                          onClick={() => setShowLaunchModal(c.id)}
-                          disabled={isLaunching}
-                          className="btn-primary py-2 text-xs bg-violet-600 hover:bg-violet-700"
-                        >
-                          <Zap size={12} /> Send Now
+                        {c.status === 'draft' && (
+                          <button
+                            onClick={() => setShowLaunchModal(c.id)}
+                            disabled={isLaunching}
+                            className="btn-primary py-2 text-xs"
+                          >
+                            {isLaunching
+                              ? <><Loader2 size={12} className="animate-spin" /> Launching…</>
+                              : <><Play size={12} /> Launch</>
+                            }
+                          </button>
+                        )}
+                        {c.status === 'scheduled' && (
+                          <button
+                            onClick={() => setShowLaunchModal(c.id)}
+                            disabled={isLaunching}
+                            className="btn-primary py-2 text-xs bg-violet-600 hover:bg-violet-700"
+                          >
+                            <Zap size={12} /> Send Now
+                          </button>
+                        )}
+                        {c.status === 'running' && (
+                          <button onClick={() => updateStatus(c.id, 'paused')} className="btn-secondary py-2 text-xs">
+                            <Pause size={12} /> Pause
+                          </button>
+                        )}
+                        {c.status === 'paused' && (
+                          <button onClick={() => setShowLaunchModal(c.id)} className="btn-primary py-2 text-xs">
+                            <Play size={12} /> Resume
+                          </button>
+                        )}
+                        <button onClick={() => deleteCampaign(c.id)} className="btn-danger py-2 px-2.5 text-xs">
+                          <Trash2 size={13} />
                         </button>
-                      )}
-                      {c.status === 'running' && (
-                        <button onClick={() => updateStatus(c.id, 'paused')} className="btn-secondary py-2 text-xs">
-                          <Pause size={12} /> Pause
-                        </button>
-                      )}
-                      {c.status === 'paused' && (
-                        <button onClick={() => setShowLaunchModal(c.id)} className="btn-primary py-2 text-xs">
-                          <Play size={12} /> Resume
-                        </button>
-                      )}
-                      <button onClick={() => deleteCampaign(c.id)} className="btn-danger py-2 px-2.5 text-xs">
-                        <Trash2 size={13} />
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -311,16 +469,16 @@ export default function Campaigns() {
         )}
       </div>
 
-      {/* ── Create Campaign Modal ─────────────────────────────────────────── */}
+      {/* ── Create / Edit Campaign Modal ─────────────────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-lg p-6 space-y-4 border-slate-200 animate-slide-up">
-            <div className="flex items-center justify-between">
+          <div className="glass-card w-[95vw] sm:max-w-xl p-4 sm:p-6 space-y-4 border-slate-200 animate-slide-up max-h-[85vh] overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md pb-2 z-10 border-b border-slate-100 mb-2 -mt-2 pt-2">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">New Campaign</h2>
+                <h2 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Campaign' : 'New Campaign'}</h2>
                 <p className="text-xs text-slate-500">Configure your broadcast settings</p>
               </div>
-              <button onClick={() => { setShowModal(false); setForm(EMPTY_FORM) }} className="text-slate-400 hover:text-slate-900 transition-colors">
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-900 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -328,20 +486,20 @@ export default function Campaigns() {
             {/* Campaign Type */}
             <div>
               <label className="label">Campaign Type</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {Object.entries(TYPE_STYLE).map(([key, { label, icon, color }]) => (
                   <button
                     key={key}
                     onClick={() => setForm(f => ({ ...f, campaignType: key }))}
                     className={clsx(
-                      'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-xs font-semibold transition-all',
+                      'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-[11px] font-semibold transition-all text-center',
                       form.campaignType === key
                         ? `${color} border-current`
                         : 'border-slate-200 text-slate-500 hover:border-slate-300'
                     )}
                   >
                     {icon}
-                    <span className="text-center leading-tight">{label}</span>
+                    <span className="leading-tight">{label}</span>
                   </button>
                 ))}
               </div>
@@ -359,7 +517,7 @@ export default function Campaigns() {
             </div>
 
             {/* Target Filters */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Target Status</label>
                 <select className="select-field" value={form.targetStatus} onChange={e => setForm(f => ({ ...f, targetStatus: e.target.value }))}>
@@ -398,23 +556,38 @@ export default function Campaigns() {
               <textarea
                 className="input-field resize-none"
                 rows={4}
-                placeholder={
-                  form.campaignType === 'whatsapp_broadcast'
-                    ? 'Hi {{name}}, we have an exciting offer for you...'
-                    : form.campaignType === 'meta_retarget'
-                    ? 'Retarget your Meta audience with this message...'
-                    : 'Dear {{name}}, we would like to share...'
-                }
+                placeholder="Hi {{name}}, we have an exciting offer for you..."
                 value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               />
               <p className="text-xs text-slate-400 mt-1">Use {'{{name}}'} for personalization</p>
             </div>
 
-            <div className="flex gap-3 justify-end pt-1">
-              <button onClick={() => { setShowModal(false); setForm(EMPTY_FORM) }} className="btn-secondary">Cancel</button>
-              <button onClick={createCampaign} disabled={saving} className="btn-primary">
-                {saving ? <><Loader2 size={13} className="animate-spin" /> Creating…</> : form.scheduledAt ? '📅 Schedule Campaign' : '✅ Create Campaign'}
+            {/* Attachment */}
+            {(form.campaignType === 'email_blast' || form.campaignType === 'whatsapp_broadcast') && (
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <Paperclip size={13} className="text-slate-500" /> Attachment (optional, max 10MB)
+                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input
+                    type="file"
+                    className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={e => setFile(e.target.files?.[0] || null)}
+                  />
+                  {!file && form.attachmentName && (
+                    <span className="text-xs text-slate-500 flex items-center gap-1 mt-2 sm:mt-0">
+                      Current: <a href={form.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{form.attachmentName}</a>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end pt-2 sticky bottom-0 bg-white/80 backdrop-blur-md pt-2">
+              <button onClick={closeModal} className="btn-secondary">Cancel</button>
+              <button onClick={createOrUpdateCampaign} disabled={saving} className="btn-primary">
+                {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : form.scheduledAt ? '📅 Save & Schedule' : '✅ Save Campaign'}
               </button>
             </div>
           </div>
@@ -433,16 +606,16 @@ export default function Campaigns() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Launch Campaign?</h3>
               <p className="text-sm text-slate-500">
-                <span className="font-semibold text-slate-700">"{camp.name}"</span> will immediately send WhatsApp messages to all matching leads.
+                <span className="font-semibold text-slate-700">"{camp.name}"</span> will immediately send messages to all matching leads.
               </p>
               <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 text-left space-y-1">
                 <p><span className="font-semibold">Type:</span> {TYPE_STYLE[camp.campaignType]?.label || camp.campaignType}</p>
                 <p><span className="font-semibold">Target status:</span> {camp.targetStatus || 'All'}</p>
                 <p><span className="font-semibold">Target source:</span> {camp.targetSource || 'All'}</p>
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2">
-                <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />
-                This action cannot be undone. Messages will be sent immediately.
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2 text-left">
+                <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
+                This action cannot be undone. Messages will be sent immediately via the backend service.
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setShowLaunchModal(null)} className="btn-secondary flex-1">Cancel</button>

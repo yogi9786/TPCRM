@@ -1,4 +1,3 @@
-from routers import leads, whatsapp, meta, campaigns, content_plans, deals, tasks, automations, documents
+from routers import leads, whatsapp, meta, campaigns, content_plans, deals, tasks, automations, documents, team, clients
 
-__all__ = ["leads", "whatsapp", "meta", "campaigns", "content_plans", "deals", "tasks", "automations", "documents"]
-
+__all__ = ["leads", "whatsapp", "meta", "campaigns", "content_plans", "deals", "tasks", "automations", "documents", "team", "clients"]

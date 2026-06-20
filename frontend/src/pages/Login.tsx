@@ -1,14 +1,13 @@
 import { useState, FormEvent, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Zap, Users, BarChart3, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-/* ── Animated stat counter ── */
+/* ── Animated counter ── */
 function AnimatedCounter({ to, label, suffix = '' }: { to: number; label: string; suffix?: string }) {
   const [count, setCount] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
-  
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) {
@@ -24,11 +23,20 @@ function AnimatedCounter({ to, label, suffix = '' }: { to: number; label: string
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
   }, [to])
-  
   return (
     <div ref={ref} className="text-center">
-      <p className="text-2xl lg:text-3xl font-black text-white tabular-nums" style={{letterSpacing: '-0.04em'}}>{count}{suffix}</p>
-      <p className="text-white/50 text-[10px] lg:text-xs font-semibold mt-0.5 uppercase tracking-widest">{label}</p>
+      <p className="text-3xl font-black tabular-nums leading-none" style={{ color: '#FFC263', letterSpacing: '-0.04em' }}>{count}{suffix}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</p>
+    </div>
+  )
+}
+
+/* ── Feature pill ── */
+function FeaturePill({ icon: Icon, label }: { icon: any; label: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+      <Icon size={14} style={{ color: '#FFC263' }} />
+      <span className="text-xs font-semibold text-white/80">{label}</span>
     </div>
   )
 }
@@ -61,7 +69,7 @@ export default function Login() {
   return (
     <>
       <style>{`
-        @keyframes gradientShift {
+        @keyframes gradientDrift {
           0%   { background-position: 0% 50%; }
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
@@ -72,130 +80,160 @@ export default function Login() {
           100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
         }
         @keyframes scanLine {
-          0%   { transform: translateY(-100%); opacity: 0; }
-          20%  { opacity: 1; }
-          80%  { opacity: 1; }
-          100% { transform: translateY(400%); opacity: 0; }
+          0%   { transform: translateY(-200%); opacity: 0; }
+          20%  { opacity: 0.6; }
+          80%  { opacity: 0.6; }
+          100% { transform: translateY(600%); opacity: 0; }
         }
-        @keyframes spinSlow {
-          to { transform: rotate(360deg); }
+        @keyframes spinOrbit { to { transform: rotate(360deg); } }
+        @keyframes counterSpin { to { transform: rotate(-360deg); } }
+        @keyframes goldGlow {
+          0%, 100% { opacity: 0.35; }
+          50%       { opacity: 0.65; }
         }
       `}</style>
 
-      <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100">
+      <div className="min-h-screen flex flex-col lg:flex-row" style={{ background: '#f0f0f9' }}>
 
-        {/* ══ LEFT — Animated hero panel (Hidden on small mobile, visible on tablet/desktop) ════════════════════════════ */}
-        <div className="hidden md:flex flex-col flex-1 relative overflow-hidden min-h-[40vh] lg:min-h-screen" style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 35%, #2563eb 60%, #4f46e5 100%)',
-          backgroundSize: '300% 300%',
-          animation: 'gradientShift 8s ease infinite',
-        }}>
+        {/* ══ LEFT — Hero panel ══════════════════════════════════════════════ */}
+        <div
+          className="hidden md:flex flex-col flex-1 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(150deg, #0c0b6e 0%, #100F88 40%, #1a19c0 80%, #2020b8 100%)',
+            backgroundSize: '300% 300%',
+            animation: 'gradientDrift 10s ease infinite',
+          }}
+        >
+          {/* Dot grid background */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
-          {/* Morphing blob 1 */}
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] opacity-20 pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, #60a5fa, transparent 70%)',
-              animation: 'morphBlob 10s ease-in-out infinite',
-            }} />
+          {/* Gold glow orb top-left */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.18) 0%, transparent 70%)', animation: 'goldGlow 4s ease-in-out infinite' }} />
 
-          {/* Morphing blob 2 */}
-          <div className="absolute -bottom-40 -right-20 w-[600px] h-[600px] opacity-15 pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, #a78bfa, transparent 70%)',
-              animation: 'morphBlob 14s ease-in-out infinite reverse',
-            }} />
+          {/* Gold glow orb bottom-right */}
+          <div className="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.12) 0%, transparent 70%)', animation: 'goldGlow 6s ease-in-out infinite reverse' }} />
 
-          {/* Dot grid */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)', backgroundSize: '28px 28px'}} />
+          {/* Scan line */}
+          <div className="absolute left-0 right-0 h-px pointer-events-none"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,194,99,0.5), transparent)', animation: 'scanLine 8s ease-in-out infinite' }} />
 
-          {/* Animated scan line */}
-          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300/60 to-transparent pointer-events-none"
-            style={{animation: 'scanLine 6s ease-in-out infinite', animationDelay: '2s'}} />
-
-          {/* Spinning ring decoration */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full border border-white/10 pointer-events-none"
-            style={{animation: 'spinSlow 40s linear infinite'}} />
+          {/* Spinning orbit rings */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="w-[600px] h-[600px] rounded-full border border-white/5" style={{ animation: 'spinOrbit 60s linear infinite' }} />
+            <div className="absolute inset-8 rounded-full border border-white/8" style={{ animation: 'spinOrbit 40s linear infinite reverse' }} />
+            <div className="absolute inset-20 rounded-full border border-white/6" style={{ animation: 'spinOrbit 25s linear infinite' }} />
+          </div>
 
           {/* Content */}
-          <div className="relative z-10 flex flex-col h-full px-8 py-10 lg:px-16 lg:py-16 justify-between max-w-2xl mx-auto w-full">
-            <div className="animate-fade-in">
-              <img
-                src="/tekhportal.webp"
-                alt="TekhPortal"
-                className="h-10 lg:h-14 w-auto object-contain brightness-0 invert opacity-90"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
+          <div className="relative z-10 flex flex-col h-full px-10 py-10 lg:px-14 lg:py-12 justify-between max-w-2xl">
+
+            {/* Logo */}
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FFC263, #f0a832)', boxShadow: '0 4px 16px rgba(255,194,99,0.45)' }}>
+                <Zap size={20} color="#100F88" strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="font-black text-white text-lg leading-none tracking-tight">TekhPortal</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#FFC263' }}>CRM Suite</p>
+              </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center py-10">
-              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-bold text-white/90 mb-6 w-fit backdrop-blur-sm shadow-xl">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                All-in-One Business CRM Suite
+            {/* Main copy */}
+            <div className="flex-1 flex flex-col justify-center py-12">
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-6 w-fit"
+                style={{ background: 'rgba(255,194,99,0.15)', border: '1px solid rgba(255,194,99,0.30)', color: '#FFC263' }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                All-in-One Agency CRM Suite
               </div>
-              
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-[1.1] mb-6 drop-shadow-lg" style={{letterSpacing: '-0.03em'}}>
-                Work smarter,<br />
-                <span className="text-blue-300">grow faster.</span>
+
+              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-[1.05] mb-5" style={{ letterSpacing: '-0.035em' }}>
+                Close more deals,<br />
+                <span style={{ color: '#FFC263' }}>grow your agency.</span>
               </h1>
-              
-              <p className="text-blue-50/90 text-sm lg:text-base xl:text-lg leading-relaxed max-w-md font-medium mb-12 drop-shadow">
-                The unified platform to manage leads, automate marketing, and scale your business — all in one place.
+
+              <p className="text-sm lg:text-base leading-relaxed max-w-sm font-medium mb-10" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                The unified platform to manage leads, clients, campaigns and automate marketing — all from one dashboard.
               </p>
 
-              {/* Live stats bar */}
-              <div className="flex items-center gap-6 lg:gap-10 bg-black/20 border border-white/10 backdrop-blur-md rounded-2xl px-6 py-5 lg:px-8 lg:py-6 w-fit shadow-2xl">
-                <AnimatedCounter to={2400}  label="Leads" suffix="+" />
-                <div className="w-px h-10 bg-white/10" />
-                <AnimatedCounter to={98}    label="Uptime" suffix="%" />
-                <div className="w-px h-10 bg-white/10" />
-                <AnimatedCounter to={340}   label="Users" suffix="+" />
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-2 mb-10">
+                <FeaturePill icon={Users} label="Lead Management" />
+                <FeaturePill icon={MessageCircle} label="WhatsApp Automation" />
+                <FeaturePill icon={BarChart3} label="Analytics" />
+                <FeaturePill icon={Zap} label="Campaign Builder" />
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-8 rounded-2xl px-6 py-5 w-fit"
+                style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}>
+                <AnimatedCounter to={2400} label="Leads" suffix="+" />
+                <div className="w-px h-10" style={{ background: 'rgba(255,255,255,0.10)' }} />
+                <AnimatedCounter to={98} label="Uptime %" />
+                <div className="w-px h-10" style={{ background: 'rgba(255,255,255,0.10)' }} />
+                <AnimatedCounter to={340} label="Users" suffix="+" />
               </div>
             </div>
 
-            <p className="text-white/40 text-xs font-medium animate-fade-in">
-              © {new Date().getFullYear()} TekhPortal CRM. Secure & Encrypted.
+            <p className="text-[11px] font-medium animate-fade-in" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              © {new Date().getFullYear()} TekhPortal CRM — Secure & Encrypted
             </p>
           </div>
         </div>
 
-        {/* ══ RIGHT — Login form ═════════════════════════════════════ */}
-        <div className="flex-1 lg:max-w-[480px] xl:max-w-[560px] flex items-center justify-center p-6 lg:p-12 bg-white shadow-[-20px_0_40px_-10px_rgba(0,0,0,0.1)] relative z-20 min-h-screen md:min-h-0">
-          <div className="w-full max-w-[380px] animate-slide-up">
+        {/* ══ RIGHT — Login form ══════════════════════════════════════════════ */}
+        <div className="flex-1 lg:max-w-[500px] xl:max-w-[560px] flex items-center justify-center p-6 lg:p-12 relative z-20 min-h-screen md:min-h-0 bg-white"
+          style={{ boxShadow: '-16px 0 48px rgba(16,15,136,0.12)' }}>
+          <div className="w-full max-w-[400px] animate-slide-up">
 
-            {/* Mobile logo (Visible only on small screens) */}
-            <div className="flex md:hidden items-center mb-12">
-              <img
-                src="/tekhportal.webp"
-                alt="TekhPortal"
-                className="h-10 w-auto object-contain"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
+            {/* Mobile logo */}
+            <div className="flex md:hidden items-center gap-3 mb-10">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #100F88, #1a19c0)', boxShadow: '0 4px 12px rgba(16,15,136,0.35)' }}>
+                <Zap size={20} color="#FFC263" strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="font-black text-base leading-none" style={{ color: '#100F88' }}>TekhPortal</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#FFC263' }}>CRM Suite</p>
+              </div>
             </div>
 
             {/* Heading */}
-            <div className="mb-10">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2" style={{letterSpacing: '-0.03em'}}>
-                Sign in
-              </h2>
-              <p className="text-slate-500 font-medium">
-                Enter your credentials to access your dashboard.
-              </p>
+            <div className="mb-8">
+              <div className="w-12 h-1 rounded-full mb-5" style={{ background: 'linear-gradient(90deg, #100F88, #FFC263)' }} />
+              <h2 className="text-3xl font-black leading-tight mb-2" style={{ color: '#100F88', letterSpacing: '-0.03em' }}>Welcome back</h2>
+              <p className="text-sm font-medium" style={{ color: '#5a5898' }}>Sign in to access your TekhPortal dashboard.</p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Email */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Email address</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#5a5898' }}>Email Address</label>
                 <div className="relative group">
-                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-blue-600" />
+                  <Mail size={17} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" style={{ color: '#9896cc' }} />
                   <input
                     id="login-email"
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-slate-300"
+                    placeholder="you@company.com"
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm font-medium transition-all outline-none"
+                    style={{
+                      background: '#f0f0f9',
+                      border: '1.5px solid #d8d8ee',
+                      color: '#0d0c50',
+                    }}
+                    onFocus={e => {
+                      e.target.style.borderColor = '#100F88'
+                      e.target.style.background = '#fff'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(16,15,136,0.12)'
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = '#d8d8ee'
+                      e.target.style.background = '#f0f0f9'
+                      e.target.style.boxShadow = 'none'
+                    }}
                     required
                     autoComplete="email"
                     autoFocus
@@ -203,37 +241,66 @@ export default function Login() {
                 </div>
               </div>
 
+              {/* Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Password</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#5a5898' }}>Password</label>
                 <div className="relative group">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-blue-600" />
+                  <Lock size={17} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#9896cc' }} />
                   <input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-slate-300"
+                    placeholder="Your secure password"
+                    className="w-full pl-11 pr-12 py-3.5 rounded-xl text-sm font-medium transition-all outline-none"
+                    style={{
+                      background: '#f0f0f9',
+                      border: '1.5px solid #d8d8ee',
+                      color: '#0d0c50',
+                    }}
+                    onFocus={e => {
+                      e.target.style.borderColor = '#100F88'
+                      e.target.style.background = '#fff'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(16,15,136,0.12)'
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = '#d8d8ee'
+                      e.target.style.background = '#f0f0f9'
+                      e.target.style.boxShadow = 'none'
+                    }}
                     required
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 transition-colors"
+                    style={{ color: '#9896cc' }}
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
               </div>
 
-              <div className="pt-4">
+              {/* Submit */}
+              <div className="pt-2">
                 <button
                   id="login-submit"
                   type="submit"
                   disabled={loading}
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-blue-600 text-white font-bold text-[15px] shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-70 disabled:pointer-events-none"
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-white font-black text-sm transition-all disabled:opacity-60 disabled:pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(135deg, #100F88, #1a19c0)',
+                    boxShadow: '0 4px 20px rgba(16,15,136,0.40), inset 0 1px 0 rgba(255,255,255,0.10)',
+                    letterSpacing: '0.01em',
+                  }}
+                  onMouseEnter={e => {
+                    if (!loading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.transform = ''
+                  }}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -244,15 +311,20 @@ export default function Login() {
                       Signing in…
                     </span>
                   ) : (
-                    <>Sign in <ArrowRight size={18} /></>
+                    <>Sign in <ArrowRight size={17} /></>
                   )}
                 </button>
               </div>
             </form>
 
-            <p className="mt-10 text-center text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              Secure Access
-            </p>
+            {/* Gold divider footer */}
+            <div className="mt-10 pt-6 border-t" style={{ borderColor: '#e4e4f0' }}>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-px" style={{ background: 'linear-gradient(90deg, transparent, #FFC263)' }} />
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9896cc' }}>Secure Login</p>
+                <div className="w-4 h-px" style={{ background: 'linear-gradient(90deg, #FFC263, transparent)' }} />
+              </div>
+            </div>
           </div>
         </div>
       </div>

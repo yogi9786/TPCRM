@@ -4,7 +4,7 @@ import {
   RefreshCw, Download, CheckCircle, AlertCircle, Users,
   Facebook, Instagram, MessageCircle, ArrowRight, Zap,
   User, Clock, Mail, Phone, Tag, ChevronDown, ChevronUp,
-  InboxIcon, LayoutGrid, List, Circle, MessageSquare
+  InboxIcon, LayoutGrid, List, Circle, MessageSquare, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -590,10 +590,10 @@ export default function MetaPage() {
                 <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 h-[600px]">
+              <div className="flex lg:grid lg:grid-cols-[340px_1fr] gap-4 h-[600px] w-full">
 
                 {/* ── Conversation List ─────────────────────────── */}
-                <div className="glass-card overflow-hidden flex flex-col">
+                <div className={clsx("glass-card overflow-hidden flex-col w-full lg:w-auto", selectedConvo ? "hidden lg:flex" : "flex")}>
                   <div className="px-4 py-3 border-b border-slate-100">
                     <p className="text-sm font-bold text-slate-800">Conversations</p>
                   </div>
@@ -648,7 +648,7 @@ export default function MetaPage() {
                 </div>
 
                 {/* ── Message Thread ────────────────────────────── */}
-                <div className="glass-card overflow-hidden flex flex-col">
+                <div className={clsx("glass-card overflow-hidden flex-col w-full lg:w-auto", !selectedConvo ? "hidden lg:flex" : "flex")}>
                   {!selectedConvo ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400">
                       <MessageSquare size={40} className="mb-3 opacity-20" />
@@ -659,6 +659,12 @@ export default function MetaPage() {
                     <>
                       {/* Thread header */}
                       <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-3">
+                        <button 
+                          onClick={() => setSelectedConvo(null)} 
+                          className="lg:hidden p-1.5 -ml-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          <ArrowLeft size={18} />
+                        </button>
                         <div className={clsx(
                           'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold',
                           selectedConvo.source === 'instagram' ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-blue-600'

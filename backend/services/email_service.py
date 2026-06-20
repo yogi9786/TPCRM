@@ -22,6 +22,8 @@ def send_email(
     html_content: str,
     text_content: str = "",
     reply_to: str = None,
+    attachment_url: str = None,
+    attachment_name: str = None,
 ) -> dict:
     """Send a transactional email via Brevo API."""
     payload = {
@@ -34,6 +36,10 @@ def send_email(
         payload["textContent"] = text_content
     if reply_to:
         payload["replyTo"] = {"email": reply_to}
+    
+    if attachment_url and attachment_name:
+        payload["attachment"] = [{"url": attachment_url, "name": attachment_name}]
+
 
     try:
         response = requests.post(
