@@ -24,7 +24,7 @@ const NAV_GROUPS = [
       { to: '/content-planner', icon: CalendarDays, label: 'Content Planner' },
       { to: '/whatsapp', icon: MessageCircle, label: 'WhatsApp' },
       { to: '/email', icon: Mail, label: 'Email' },
-      { to: '/meta', icon: Share2, label: 'Meta Ads' },
+      { to: '/meta', icon: Share2, label: 'Meta' },
       { to: '/livechat', icon: MessageSquare, label: 'Live Chat' },
     ]
   },

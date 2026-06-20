@@ -43,6 +43,7 @@ app.include_router(auth_router)
 app.include_router(leads.router)
 app.include_router(whatsapp.router)
 app.include_router(meta.router)
+app.include_router(meta.router, prefix="/api") # Added to support /api/meta/webhook
 app.include_router(campaigns.router)
 app.include_router(email_router.router)
 app.include_router(content_plans.router)

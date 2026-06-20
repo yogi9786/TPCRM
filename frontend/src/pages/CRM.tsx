@@ -61,6 +61,7 @@ export default function CRM() {
   const [view, setView] = useState<'table' | 'kanban'>('table')
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'All'>('All')
+  const [filterSource, setFilterSource] = useState<string>('All')
   const [showModal, setShowModal] = useState(false)
   const [editLead, setEditLead] = useState<Lead | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -402,7 +403,8 @@ export default function CRM() {
     const q = search.toLowerCase()
     const matchSearch = !q || l.fullName?.toLowerCase().includes(q) || l.phone?.includes(q) || l.email?.toLowerCase().includes(q) || l.companyName?.toLowerCase().includes(q)
     const matchStatus = filterStatus === 'All' || l.status === filterStatus
-    return matchSearch && matchStatus
+    const matchSource = filterSource === 'All' || l.leadSource === filterSource || (filterSource === 'Meta' && (l.leadSource === 'Facebook Ads' || l.leadSource === 'Instagram Ads'))
+    return matchSearch && matchStatus && matchSource
   })
 
   function exportCSV() {
@@ -474,6 +476,19 @@ export default function CRM() {
             >
               <option value="All">All Status</option>
               {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          {/* Source filter */}
+          <div className="relative">
+            <select
+              value={filterSource}
+              onChange={e => setFilterSource(e.target.value)}
+              className="select-field pr-8 min-w-[140px]"
+            >
+              <option value="All">All Sources</option>
+              <option value="Meta">📱 Meta (FB + IG)</option>
+              {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 

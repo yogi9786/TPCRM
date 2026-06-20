@@ -40,6 +40,12 @@ export interface Lead {
   tags?: string[]
   value?: number
   whatsappOptIn?: boolean
+  // Meta Ads fields
+  metaLeadId?: string
+  metaFormId?: string
+  metaCampaignId?: string
+  metaCampaignName?: string
+  metaAdName?: string
 }
 
 export interface Message {
@@ -58,30 +64,40 @@ export interface Campaign {
   name: string
   templateName: string
   message: string
+  campaignType?: 'whatsapp_broadcast' | 'meta_retarget' | 'email_blast'
   targetCount: number
   sentCount: number
   deliveredCount: number
   readCount: number
   failedCount: number
-  status: 'draft' | 'running' | 'completed' | 'failed'
+  status: 'draft' | 'scheduled' | 'running' | 'completed' | 'failed' | 'paused'
   userId: string
+  targetStatus?: string
+  targetSource?: string
   createdAt: string
   scheduledAt?: string
   completedAt?: string
+  metaCampaignId?: string
 }
 
 export interface MetaLead {
   id: string
   leadgenId: string
   formId: string
+  formName?: string
   pageId: string
   adId?: string
+  adName?: string
   adsetId?: string
+  adsetName?: string
   campaignId?: string
+  campaignName?: string
+  source?: string
   fieldData: Record<string, string>
   importedToCRM: boolean
   crmLeadId?: string
   createdAt: string
+  metaCreatedTime?: string
 }
 
 export interface User {
