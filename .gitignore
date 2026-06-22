@@ -29,6 +29,7 @@ venv.bak/
 .env.production.local
 frontend/.env
 backend/.env
+# frontend/.env.production is intentionally NOT ignored — it sets VITE_API_URL for Netlify builds
 
 # Firebase / Secrets
 serviceAccountKey.json

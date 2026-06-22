@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User as FirebaseUser, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth'
 import { auth } from '../firebase'
+import { API_URL } from '../lib/api'
 
 interface AuthContextType {
   currentUser: any
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com';
+      const apiUrl = API_URL;
       const formData = new URLSearchParams()
       formData.append('username', email)
       formData.append('password', password)
