@@ -477,7 +477,10 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             err_type = err.get("type", "")
             # Friendly messages for common errors
             if code == 190:
-                friendly = "Your Meta Page Access Token has expired. Generate a new long-lived token."
+                if "page access token" in msg.lower():
+                    friendly = "Wrong token type: you need a PAGE Access Token, not a User Access Token. In Graph API Explorer, select your Page from the dropdown before generating the token."
+                else:
+                    friendly = "Your Meta Page Access Token has expired. Generate a new long-lived Page token from Graph API Explorer."
             elif code == 200 or "permission" in msg.lower():
                 friendly = "Missing permissions: your token needs 'pages_messaging' and 'pages_read_engagement'. Grant them in Meta App Dashboard."
             elif code == 100:
