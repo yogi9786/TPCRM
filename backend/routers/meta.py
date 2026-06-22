@@ -211,6 +211,24 @@ async def get_config_status(user: dict = Depends(get_current_user)):
     return get_meta_config_status()
 
 
+@router.get("/debug")
+async def debug_meta_config():
+    """Public debug endpoint — shows Meta config status (no auth required).
+    Use this to verify env vars are loaded on Render."""
+    from config import META_APP_ID, META_APP_SECRET, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_AD_ACCOUNT_ID, META_VERIFY_TOKEN, BACKEND_URL
+    return {
+        "app_id": META_APP_ID[:6] + "..." if META_APP_ID else "MISSING",
+        "app_secret": META_APP_SECRET[:4] + "..." if META_APP_SECRET else "MISSING",
+        "page_token": META_PAGE_ACCESS_TOKEN[:10] + "..." if META_PAGE_ACCESS_TOKEN else "MISSING",
+        "page_id": META_PAGE_ID or "MISSING",
+        "ad_account_id": META_AD_ACCOUNT_ID or "MISSING",
+        "verify_token": META_VERIFY_TOKEN or "MISSING",
+        "backend_url": BACKEND_URL,
+        "webhook_url": f"{BACKEND_URL}/api/meta/webhook",
+        "status": get_meta_config_status(),
+    }
+
+
 # ── Meta Leads ─────────────────────────────────────────────────────────────────
 
 @router.get("/leads")

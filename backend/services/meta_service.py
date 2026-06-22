@@ -4,9 +4,10 @@ Full Graph API integration: leads, forms, campaigns, ad accounts, webhooks
 """
 import hmac
 import hashlib
+import os
 import requests
 from typing import Optional
-from config import META_APP_SECRET, META_PAGE_ACCESS_TOKEN, META_APP_ID, META_PAGE_ID, META_AD_ACCOUNT_ID
+from config import META_APP_SECRET, META_PAGE_ACCESS_TOKEN, META_APP_ID, META_PAGE_ID, META_AD_ACCOUNT_ID, META_VERIFY_TOKEN
 
 GRAPH_BASE = "https://graph.facebook.com/v21.0"
 
@@ -20,12 +21,12 @@ def verify_meta_signature(payload: bytes, signature: str) -> bool:
     if not META_APP_SECRET or META_APP_SECRET in ("", "your_app_secret", "YOUR_META_APP_SECRET_HERE"):
         # Allow through when not configured (dev mode)
         return True
-    expected = hmac.new(
-        META_APP_SECRET.encode(),
-        payload,
-        hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(expected, signature[7:])
+    mac = hmac.new(META_APP_SECRET.encode(), payload, hashlib.sha256)
+    expected = mac.hexdigest()
+    try:
+        return hmac.compare_digest(expected, signature[7:])
+    except Exception:
+        return False
 
 
 # ── Lead Details ───────────────────────────────────────────────────────────────
@@ -267,7 +268,8 @@ def get_meta_config_status() -> dict:
         "page_access_token_set": bool(META_PAGE_ACCESS_TOKEN) and META_PAGE_ACCESS_TOKEN not in placeholders,
         "page_id_set": bool(META_PAGE_ID) and META_PAGE_ID not in placeholders,
         "ad_account_id_set": bool(META_AD_ACCOUNT_ID) and META_AD_ACCOUNT_ID not in placeholders,
-        "webhook_verify_token": "tekhportal_verify_2024",
+        "webhook_verify_token": META_VERIFY_TOKEN,
+        "webhook_callback_url": f"{os.getenv('BACKEND_URL', 'https://tpcrm.onrender.com')}/api/meta/webhook",
         "fully_configured": all([
             META_APP_ID not in placeholders and META_APP_ID,
             META_APP_SECRET not in placeholders and META_APP_SECRET,
