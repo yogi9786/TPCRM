@@ -451,63 +451,103 @@ async def mark_conversation_read(sender_id: str, user: dict = Depends(get_curren
 
 @router.post("/messages/sync")
 async def sync_meta_messages(user: dict = Depends(get_current_user)):
-    """Pull historical messages from Meta Page."""
+    """Pull historical messages from Meta Page Conversations API."""
     config = get_meta_config_status()
-    if not config.get("page_access_token_set") or not config.get("page_id_set"):
-        raise HTTPException(status_code=400, detail="Page Token and Page ID required")
+    if not config.get("page_access_token_set"):
+        return {
+            "status": "skipped",
+            "new_messages_synced": 0,
+            "reason": "META_PAGE_ACCESS_TOKEN is not set. Add it in your Render environment variables."
+        }
+    if not config.get("page_id_set"):
+        return {
+            "status": "skipped",
+            "new_messages_synced": 0,
+            "reason": "META_PAGE_ID is not set. Add it in your Render environment variables."
+        }
 
     data = get_historical_conversations()
+
+    # Handle Meta API errors gracefully — don't crash the app
     if "error" in data:
-        raise HTTPException(status_code=400, detail=str(data["error"]))
+        err = data["error"]
+        if isinstance(err, dict):
+            code = err.get("code", "")
+            msg = err.get("message", str(err))
+            err_type = err.get("type", "")
+            # Friendly messages for common errors
+            if code == 190:
+                friendly = "Your Meta Page Access Token has expired. Generate a new long-lived token."
+            elif code == 200 or "permission" in msg.lower():
+                friendly = "Missing permissions: your token needs 'pages_messaging' and 'pages_read_engagement'. Grant them in Meta App Dashboard."
+            elif code == 100:
+                friendly = f"Meta API error (invalid parameter): {msg}"
+            else:
+                friendly = f"Meta API error [{code}]: {msg}"
+        else:
+            friendly = str(err)
+        return {
+            "status": "error",
+            "new_messages_synced": 0,
+            "reason": friendly,
+            "meta_error": err,
+        }
 
     convos = data.get("data", [])
     db = get_db()
     new_messages = 0
 
-    page_id = config.get("page_id_set")
-
     for convo in convos:
-        # Each convo has a participants list and messages list
         participants = convo.get("participants", {}).get("data", [])
-        if not participants: continue
-        
-        # Find the other person (not the page)
-        # We don't strictly know our own name easily, but usually participants has 2 people
-        # Try to find someone who is not the page
+        if not participants:
+            continue
+
+        # Find the non-page participant (the actual user)
         sender = participants[0] if len(participants) == 1 else participants[1]
         sender_id = sender.get("id", "unknown")
-        
+
         msgs = convo.get("messages", {}).get("data", [])
         for m in msgs:
             mid = m.get("id", "")
-            if not mid: continue
-            
-            # Skip duplicates
-            existing = list(db.collection("meta_messages").where("mid", "==", mid).stream())
-            if existing: continue
+            if not mid:
+                continue
 
-            # Determine direction
-            # If from.id == sender_id, it's inbound. Else it's outbound.
+            # Skip duplicates
+            try:
+                existing = list(db.collection("meta_messages").where("mid", "==", mid).stream())
+                if existing:
+                    continue
+            except Exception:
+                pass
+
             from_id = m.get("from", {}).get("id", "")
             direction = "inbound" if from_id == sender_id else "outbound"
 
             msg_doc = {
                 "mid": mid,
                 "senderId": sender_id,
+                "senderName": sender.get("name", ""),
                 "recipientId": "page",
                 "pageId": "page",
                 "direction": direction,
                 "text": m.get("message", ""),
                 "attachments": [],
-                "source": "facebook",  # Graph API usually returns FB messages here unless it's IG specific
+                "source": "facebook",
                 "timestamp": m.get("created_time", ""),
                 "createdAt": datetime.utcnow().isoformat() + "Z",
-                "read": True, # Mark historical as read by default
+                "read": True,
             }
-            db.collection("meta_messages").add(msg_doc)
-            new_messages += 1
+            try:
+                db.collection("meta_messages").add(msg_doc)
+                new_messages += 1
+            except Exception:
+                pass
 
-    return {"status": "success", "new_messages_synced": new_messages}
+    return {
+        "status": "success",
+        "new_messages_synced": new_messages,
+        "conversations_found": len(convos),
+    }
 
 
 # ── Sync from Meta Graph API ───────────────────────────────────────────────────

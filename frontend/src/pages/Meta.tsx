@@ -188,12 +188,16 @@ export default function MetaPage() {
       const res = await authFetch(`${API}/meta/messages/sync`, { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        toast.success(`Synced ${data.new_messages_synced ?? 0} historical messages`)
-        loadMessages()
+        if (data.status === 'error' || data.status === 'skipped') {
+          toast.error(data.reason || 'Message sync failed', { duration: 6000 })
+        } else {
+          toast.success(`Synced ${data.new_messages_synced ?? 0} messages from ${data.conversations_found ?? 0} conversations`)
+          loadMessages()
+        }
       } else {
         toast.error(data.detail || 'Message sync failed')
       }
-    } catch { toast.error('Message sync failed') }
+    } catch { toast.error('Message sync failed — check backend connection') }
     finally { setSyncingMsgs(false) }
   }
 
@@ -584,6 +588,20 @@ export default function MetaPage() {
                 )}
               </div>
             </div>
+
+            {/* ── Meta Permissions Info Banner ─────────────────── */}
+            {!configStatus?.fully_configured && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-start gap-2">
+                <AlertCircle size={15} className="mt-0.5 flex-shrink-0 text-amber-500" />
+                <div>
+                  <p className="font-semibold">Messages require Meta Webhook configuration</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Set up your webhook at <b>https://tpcrm.onrender.com/api/meta/webhook</b> with verify token <b>tekhportal_webhook</b> in your Meta App Dashboard → Webhooks.
+                    Messages will appear here in real-time after that.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {msgsLoading && conversations.length === 0 ? (
               <div className="flex items-center justify-center h-48">
