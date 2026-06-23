@@ -42,9 +42,6 @@ export default function LiveChat() {
   }
 
   
-  // Edit State
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
-  const [editMessageText, setEditMessageText] = useState('')
 
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -315,22 +312,7 @@ export default function LiveChat() {
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          {editingMessageId === msg.id ? (
-                            <div className="mt-2 flex flex-col gap-2">
-                              <textarea
-                                value={editMessageText}
-                                onChange={e => setEditMessageText(e.target.value)}
-                                className="w-full text-xs p-2 rounded text-slate-900 border border-slate-300 resize-none"
-                                rows={2}
-                              />
-                              <div className="flex gap-2 justify-end">
-                                <button onClick={() => setEditingMessageId(null)} className="text-[10px] text-slate-500 hover:text-slate-700 font-medium bg-white px-2 py-1 rounded">Cancel</button>
-                                <button onClick={() => msg.id && saveEditedMessage(msg.id)} className="text-[10px] text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-2 py-1 rounded">Save</button>
-                              </div>
-                            </div>
-                          ) : (
                             <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                          )}
                         </div>
 
                         {/* Hover Actions (Delete) */}
