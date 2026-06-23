@@ -4,7 +4,7 @@ import {
   RefreshCw, Download, CheckCircle, AlertCircle, Users,
   Facebook, Instagram, MessageCircle, ArrowRight, Zap,
   User, Clock, Mail, Phone, Tag, ChevronDown, ChevronUp,
-  InboxIcon, LayoutGrid, List, Circle, MessageSquare, ArrowLeft
+  InboxIcon, LayoutGrid, List, Circle, MessageSquare, ArrowLeft, Send
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -99,6 +99,10 @@ export default function MetaPage() {
   const [msgsLoading, setMsgsLoading] = useState(false)
   const [msgFilter, setMsgFilter] = useState<'all' | 'facebook' | 'instagram'>('all')
   const [syncingMsgs, setSyncingMsgs] = useState(false)
+  
+  // Reply state
+  const [replyText, setReplyText] = useState('')
+  const [replying, setReplying] = useState(false)
 
   // Overview state
   const [configStatus, setConfigStatus] = useState<ConfigStatus | null>(null)
@@ -159,13 +163,7 @@ export default function MetaPage() {
     if (activeTab === 'messages' || activeTab === 'overview') loadMessages()
   }, [activeTab, currentUser, loadLeads, loadMessages])
 
-  // Auto-poll messages every 15 seconds when on messages tab
-  useEffect(() => {
-    if (activeTab === 'messages') {
-      pollRef.current = setInterval(loadMessages, 15000)
-    }
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [activeTab, loadMessages])
+  // Auto-polling removed per request
 
   async function syncLeads() {
     setSyncing(true)
@@ -199,6 +197,58 @@ export default function MetaPage() {
       }
     } catch { toast.error('Message sync failed — check backend connection') }
     finally { setSyncingMsgs(false) }
+  }
+
+  async function sendReply(e: React.FormEvent) {
+    e.preventDefault()
+    if (!replyText.trim() || !selectedConvo) return
+    
+    setReplying(true)
+    try {
+      const res = await authFetch(`${API}/meta/messages/send`, {
+        method: 'POST',
+        body: JSON.stringify({
+          recipient_id: selectedConvo.senderId,
+          text: replyText.trim(),
+          source: selectedConvo.source
+        })
+      })
+      
+      if (res.ok) {
+        setReplyText('')
+        // Optimistically add message
+        const newMsg: MetaMessage = {
+          id: `temp_${Date.now()}`,
+          senderId: selectedConvo.senderId,
+          direction: 'outbound',
+          text: replyText.trim(),
+          source: selectedConvo.source,
+          timestamp: new Date().toISOString(),
+          read: true
+        }
+        
+        setSelectedConvo(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            messages: [newMsg, ...prev.messages]
+          }
+        })
+        
+        setConversations(prev => prev.map(c => 
+          c.senderId === selectedConvo.senderId 
+            ? { ...c, messages: [newMsg, ...c.messages], lastMessage: newMsg.text, lastTimestamp: newMsg.timestamp }
+            : c
+        ))
+      } else {
+        const err = await res.json()
+        toast.error(err.detail || 'Failed to send message')
+      }
+    } catch {
+      toast.error('Network error sending message')
+    } finally {
+      setReplying(false)
+    }
   }
 
   async function importLead(lead: MetaLead) {
@@ -740,11 +790,32 @@ export default function MetaPage() {
                         ))}
                       </div>
 
-                      {/* No-reply notice */}
-                      <div className="border-t border-slate-100 px-4 py-3 bg-slate-50">
-                        <p className="text-xs text-slate-400 text-center">
-                          Replies must be sent from your Facebook / Instagram page directly. Live viewing only.
-                        </p>
+                      {/* Reply Input */}
+                      <div className="border-t border-slate-100 p-4 bg-white">
+                        <form onSubmit={sendReply} className="flex items-end gap-3">
+                          <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <textarea
+                              value={replyText}
+                              onChange={e => setReplyText(e.target.value)}
+                              placeholder={`Reply to ${selectedConvo.source === 'instagram' ? 'Instagram' : 'Facebook'} user...`}
+                              className="w-full bg-transparent border-none focus:outline-none resize-none text-sm placeholder:text-slate-400 py-1"
+                              rows={1}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault()
+                                  sendReply(e)
+                                }
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={!replyText.trim() || replying}
+                            className="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white flex items-center justify-center flex-shrink-0 transition-colors shadow-sm"
+                          >
+                            {replying ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} className="ml-0.5" />}
+                          </button>
+                        </form>
                       </div>
                     </>
                   )}

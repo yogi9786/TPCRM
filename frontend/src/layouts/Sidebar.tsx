@@ -28,7 +28,7 @@ const NAV_GROUPS = [
       { to: '/whatsapp',        icon: MessageCircle,  label: 'WhatsApp'         },
       { to: '/email',           icon: Mail,           label: 'Email'            },
       { to: '/meta',            icon: Share2,         label: 'Meta Ads'         },
-      { to: '/livechat',        icon: MessageSquare,  label: 'Live Chat'        },
+      { to: '/livechat',        icon: MessageSquare,  label: 'WhatsApp Chat'    },
     ]
   },
   {

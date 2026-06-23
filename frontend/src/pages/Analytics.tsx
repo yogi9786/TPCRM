@@ -1,40 +1,50 @@
 import MainLayout from '../layouts/MainLayout'
 import PageHeader from '../components/PageHeader'
-import { BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { BarChart3, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
 
-const monthlyData = [
-  { month: 'Jan', leads: 45, messages: 120, conversions: 8 },
-  { month: 'Feb', leads: 62, messages: 180, conversions: 14 },
-  { month: 'Mar', leads: 78, messages: 210, conversions: 18 },
-  { month: 'Apr', leads: 55, messages: 165, conversions: 12 },
-  { month: 'May', leads: 91, messages: 280, conversions: 23 },
-  { month: 'Jun', leads: 108, messages: 340, conversions: 31 },
-]
-
-const sourceData = [
-  { name: 'Facebook Ads', value: 42, fill: '#100F88' },
-  { name: 'Instagram Ads', value: 28, fill: '#FFC263' },
-  { name: 'Website', value: 18, fill: '#10b981' },
-  { name: 'WhatsApp', value: 8, fill: '#22c55e' },
-  { name: 'Referral', value: 4, fill: '#f59e0b' },
-]
-
-const serviceData = [
-  { name: 'WhatsApp Marketing', value: 38 },
-  { name: 'CRM Setup', value: 25 },
-  { name: 'Meta Ads', value: 22 },
-  { name: 'Website Dev', value: 15 },
-]
-
-const kpis = [
-  { label: 'Total Revenue', value: '₹4.8L', change: '+23%', up: true, color: '#100F88', strip: '#100F88' },
-  { label: 'Avg Deal Size', value: '₹18,500', change: '+8%', up: true, color: '#059669', strip: '#10b981' },
-  { label: 'Response Rate', value: '68%', change: '+12%', up: true, color: '#7c3aed', strip: '#7c3aed' },
-  { label: 'Churn Rate', value: '4.2%', change: '-2%', up: false, color: '#ef4444', strip: '#ef4444' },
-]
+const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
 
 export default function Analytics() {
+  const { currentUser } = useAuth()
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  async function fetchAnalytics(isRefresh = false) {
+    if (!currentUser) return
+    if (isRefresh) setRefreshing(true)
+    try {
+      const token = await currentUser!.getIdToken()
+      const res = await fetch(`${API}/analytics/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to fetch analytics')
+      const json = await res.json()
+      setData(json)
+      if (isRefresh) toast.success('Analytics refreshed')
+    } catch (e: any) {
+      toast.error('Failed to load analytics')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [currentUser])
+
+  if (loading) return <MainLayout><div className="flex justify-center p-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div></MainLayout>
+
+  const kpis = data?.kpis || []
+  const monthlyData = data?.monthlyData || []
+  const sourceData = data?.sourceData || []
+  const serviceData = data?.serviceData || []
+
   return (
     <MainLayout>
       <div className="space-y-5 animate-fade-in">
@@ -43,6 +53,16 @@ export default function Analytics() {
           subtitle="Performance insights across leads, messages & campaigns"
           icon={<BarChart3 size={20} />}
           badge="Live Data"
+          actions={
+            <button 
+              onClick={() => fetchAnalytics(true)} 
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/10 hover:bg-white/20 text-white transition-all border border-white/10 shadow-sm disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+          }
         />
 
         {/* KPI Cards */}
@@ -119,20 +139,20 @@ export default function Analytics() {
             <h2 className="text-base font-bold mb-0.5" style={{ color: '#0d0c50' }}>Top Services Interested</h2>
             <p className="text-xs font-medium mb-5" style={{ color: '#9896cc' }}>Most requested services from leads</p>
             <div className="space-y-4">
-              {serviceData.map(({ name, value }, idx) => {
-                const total = serviceData.reduce((a, b) => a + b.value, 0)
-                const pct = Math.round((value / total) * 100)
+              {serviceData.map(({ name, value }: any, idx: number) => {
+                const total = serviceData.reduce((a: any, b: any) => a + b.value, 0)
+                const pct = total === 0 ? 0 : Math.round((value / total) * 100)
                 const colors = ['#100F88', '#FFC263', '#10b981', '#7c3aed']
                 return (
                   <div key={name}>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="font-semibold" style={{ color: '#0d0c50' }}>{name}</span>
-                      <span className="font-bold" style={{ color: colors[idx] }}>{pct}%</span>
+                      <span className="font-bold" style={{ color: colors[idx % colors.length] }}>{pct}%</span>
                     </div>
                     <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#e4e4f0' }}>
                       <div
                         className="h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${pct}%`, background: colors[idx] }}
+                        style={{ width: `${pct}%`, background: colors[idx % colors.length] }}
                       />
                     </div>
                   </div>

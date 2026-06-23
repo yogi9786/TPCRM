@@ -25,11 +25,8 @@ export default function LiveChat() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sourceFilter, setSourceFilter] = useState<'All' | 'WhatsApp' | 'Meta'>('All')
   const [messageText, setMessageText] = useState('')
   
-  // Chat modes & automation states
-  const [chatMode, setChatMode] = useState<'web' | 'whatsapp' | 'email'>('web')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [sending, setSending] = useState(false)
@@ -43,10 +40,7 @@ export default function LiveChat() {
       toast.success('Live Chat data refreshed')
     }, 600)
   }
-  
-  // Email chat state
-  const [emailSubject, setEmailSubject] = useState('')
-  const [emailSending, setEmailSending] = useState(false)
+
   
   // Edit State
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
@@ -83,11 +77,9 @@ export default function LiveChat() {
     }
     
     setLoadingHistory(true)
-    // Attempt Firestore sync
     try {
       const q = query(
-        collection(db, 'chats'), 
-        where('userId', '==', currentUser.uid),
+        collection(db, 'messages'), 
         where('leadId', '==', selectedLead.id),
         orderBy('createdAt', 'asc')
       )
@@ -98,41 +90,44 @@ export default function LiveChat() {
             const data = d.data()
             return {
               id: d.id,
-              sender: data.sender,
-              text: data.text,
-              createdAt: data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString(),
-              leadId: data.leadId
+              sender: data.direction === 'inbound' ? 'client' : 'agent',
+              text: data.body || data.text || '',
+              createdAt: data.createdAt,
+              leadId: data.leadId,
+              status: data.status
             } as ChatMessage
           })
           setMessages(chats)
         } else {
-          // Fallback to LocalStorage for mock database runs
-          const localHistory = localStorage.getItem(`chat_history_${selectedLead.id}`)
-          if (localHistory) {
-            setMessages(JSON.parse(localHistory))
-          } else {
-            // Seed a starter message
-            const seed: ChatMessage[] = [
-              {
-                sender: 'client',
-                text: `Hello, I'm interested in TekhPortal services. Can you help me?`,
-                createdAt: new Date(Date.now() - 3600 * 1000).toISOString(),
-                leadId: selectedLead.id
-              }
-            ]
-            setMessages(seed)
-            localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(seed))
-          }
+          setMessages([])
         }
         setLoadingHistory(false)
       }, (err) => {
-        // Firestore rules might prevent order-by without indexes, fallback
         console.warn('Firestore fallback active:', err)
-        const localHistory = localStorage.getItem(`chat_history_${selectedLead.id}`)
-        if (localHistory) {
-          setMessages(JSON.parse(localHistory))
+        // Try fallback query without orderBy
+        try {
+            const fallbackQ = query(
+                collection(db, 'messages'), 
+                where('leadId', '==', selectedLead.id)
+            )
+            onSnapshot(fallbackQ, snap => {
+                const chats = snap.docs.map(d => {
+                    const data = d.data()
+                    return {
+                      id: d.id,
+                      sender: data.direction === 'inbound' ? 'client' : 'agent',
+                      text: data.body || data.text || '',
+                      createdAt: data.createdAt,
+                      leadId: data.leadId,
+                      status: data.status
+                    } as ChatMessage
+                }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                setMessages(chats)
+                setLoadingHistory(false)
+            })
+        } catch (e) {
+            setLoadingHistory(false)
         }
-        setLoadingHistory(false)
       })
       
       return unsub
@@ -147,79 +142,46 @@ export default function LiveChat() {
   }, [messages, botTyping])
 
   // ── Send message ─────────────────────────────────────────────────────────
-  async function handleSend(senderOverride?: 'client' | 'agent') {
+  async function handleSend() {
     if (!messageText.trim() || !selectedLead || !currentUser) return
+    setSending(true)
     
-    const sender = senderOverride || 'agent'
-    const newMsg: ChatMessage = {
-      sender,
-      text: messageText.trim(),
-      createdAt: new Date().toISOString(),
-      leadId: selectedLead.id
-    }
-    
-    // Save locally
-    const currentList = [...messages, newMsg]
-    setMessages(currentList)
-    localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(currentList))
-    setMessageText('')
-    
-    // Attempt Firestore save
     try {
-      await addDoc(collection(db, 'chats'), {
-        ...newMsg,
-        userId: currentUser.uid,
-        createdAt: serverTimestamp()
+      const token = await currentUser.getIdToken()
+      const res = await fetch(`${API}/whatsapp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          to: selectedLead.phone,
+          body: messageText.trim(),
+          lead_id: selectedLead.id
+        })
       })
+      if (!res.ok) throw new Error('Failed to send WhatsApp message')
+      setMessageText('')
+      toast.success('WhatsApp Message Sent')
     } catch (err) {
-      console.warn('Failed to save to Firestore, using local backup')
+      toast.error('Failed to send WhatsApp message')
+    } finally {
+      setSending(false)
     }
   }
 
-  // ── Edit & Delete Messages ────────────────────────────────────────────────
-  async function saveEditedMessage(msgId: string) {
-    if (!editMessageText.trim()) return
-    try {
-      await updateDoc(doc(db, 'chats', msgId), {
-        text: editMessageText.trim()
-      })
-      
-      // Update local state for immediate feedback or local storage fallback
-      const updatedMessages = messages.map(m => m.id === msgId ? { ...m, text: editMessageText.trim() } : m)
-      setMessages(updatedMessages)
-      if (selectedLead) localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(updatedMessages))
-      
-      setEditingMessageId(null)
-      setEditMessageText('')
-      toast.success('Message updated')
-    } catch (err) {
-      toast.error('Failed to update message')
-    }
-  }
-
+  // ── Delete Messages ────────────────────────────────────────────────
   async function deleteMessage(msgId: string) {
-    if (!confirm('Are you sure you want to delete this message?')) return
+    if (!confirm('Are you sure you want to delete this message from the CRM history?')) return
     try {
-      await deleteDoc(doc(db, 'chats', msgId))
-      
-      const updatedMessages = messages.filter(m => m.id !== msgId)
-      setMessages(updatedMessages)
-      if (selectedLead) localStorage.setItem(`chat_history_${selectedLead.id}`, JSON.stringify(updatedMessages))
-      
+      await deleteDoc(doc(db, 'messages', msgId))
       toast.success('Message deleted')
     } catch (err) {
       toast.error('Failed to delete message')
     }
   }
 
-  // Filter leads by search query and source
+  // Filter leads by search query and restrict to WhatsApp leads only
   const filteredLeads = leads.filter(l => {
     const matchesSearch = l.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || l.phone.includes(searchQuery)
-    const matchesSource = sourceFilter === 'All' 
-      ? true 
-      : sourceFilter === 'Meta' 
-        ? (l.leadSource.includes('Meta') || l.leadSource.includes('Facebook') || l.leadSource.includes('Instagram')) 
-        : l.leadSource === 'WhatsApp'
+    const matchesSource = l.leadSource === 'WhatsApp'
     return matchesSearch && matchesSource
   })
 
@@ -232,8 +194,8 @@ export default function LiveChat() {
           <div className="p-4 border-b border-slate-200">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MessageSquare className="text-blue-400" size={18} />
-                Conversations
+                <MessageSquare className="text-emerald-500" size={18} />
+                WhatsApp Chat
               </h2>
               <button onClick={handleRefresh} className="text-slate-400 hover:text-blue-500 transition-colors">
                 <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
@@ -248,11 +210,6 @@ export default function LiveChat() {
                 onChange={e => setSearchQuery(e.target.value)}
                 className="input-field pl-9 py-2 text-xs"
               />
-            </div>
-            <div className="flex gap-2 mt-3 px-1">
-              <button onClick={() => setSourceFilter('All')} className={clsx('text-xs px-2.5 py-1 rounded-full font-medium transition-colors', sourceFilter === 'All' ? 'bg-slate-200 text-slate-800' : 'text-slate-500 hover:bg-slate-100')}>All</button>
-              <button onClick={() => setSourceFilter('WhatsApp')} className={clsx('text-xs px-2.5 py-1 rounded-full font-medium transition-colors', sourceFilter === 'WhatsApp' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-100')}>WhatsApp</button>
-              <button onClick={() => setSourceFilter('Meta')} className={clsx('text-xs px-2.5 py-1 rounded-full font-medium transition-colors', sourceFilter === 'Meta' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-100')}>Meta</button>
             </div>
           </div>
           
@@ -312,29 +269,9 @@ export default function LiveChat() {
                   </div>
                 </div>
                 
-                {/* Chat Configs & Automation */}
+                {/* Chat Configs */}
                 <div className="flex items-center gap-4 flex-wrap">
-                  {/* Chat Mode Toggle */}
-                  <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs bg-white/40">
-                    <button
-                      onClick={() => setChatMode('web')}
-                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'web' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:text-slate-900')}
-                    >
-                      Web Chat
-                    </button>
-                    <button
-                      onClick={() => setChatMode('whatsapp')}
-                      className={clsx('px-2.5 py-1.5 font-medium transition-colors', chatMode === 'whatsapp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-500 hover:text-slate-900')}
-                    >
-                      WhatsApp Mock
-                    </button>
-                    <button
-                      onClick={() => setChatMode('email')}
-                      className={clsx('px-2.5 py-1.5 font-medium transition-colors flex items-center gap-1', chatMode === 'email' ? 'bg-orange-500/20 text-orange-400' : 'text-slate-500 hover:text-slate-900')}
-                    >
-                      <Mail size={11} /> Email
-                    </button>
-                  </div>
+                  <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">WhatsApp</span>
                 </div>
               </div>
 
@@ -396,15 +333,12 @@ export default function LiveChat() {
                           )}
                         </div>
 
-                        {/* Hover Actions (Edit/Delete) */}
+                        {/* Hover Actions (Delete) */}
                         {msg.id && (msg.sender === 'agent' || msg.sender === 'client' || msg.sender === 'bot') && (
                           <div className={clsx(
                             'flex flex-col gap-1 mx-2 opacity-0 group-hover:opacity-100 transition-opacity',
                             msg.sender === 'client' ? 'order-last' : 'order-first'
                           )}>
-                            <button onClick={() => { setEditingMessageId(msg.id!); setEditMessageText(msg.text) }} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-blue-600 transition-colors" title="Edit message">
-                              <Edit2 size={12} />
-                            </button>
                             <button onClick={() => msg.id && deleteMessage(msg.id)} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-red-500 transition-colors" title="Delete message">
                               <Trash2 size={12} />
                             </button>
@@ -426,121 +360,27 @@ export default function LiveChat() {
 
               {/* Chat Input */}
               <div className="p-4 border-t border-slate-200 flex-shrink-0 bg-white/40">
-                {chatMode === 'email' ? (
-                  // ── Email Compose Panel ───────────────────────────────────
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Email subject"
-                        value={emailSubject}
-                        onChange={e => setEmailSubject(e.target.value)}
-                        className="input-field flex-1 text-xs py-2"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <textarea
-                        rows={3}
-                        placeholder={`Write an email to ${selectedLead.fullName}...`}
-                        value={messageText}
-                        onChange={e => setMessageText(e.target.value)}
-                        className="input-field flex-1 resize-none text-xs"
-                      />
-                      <button
-                        disabled={!messageText.trim() || !emailSubject.trim() || emailSending}
-                        onClick={async () => {
-                          if (!selectedLead?.email || !messageText.trim() || !emailSubject.trim()) {
-                            if (!selectedLead?.email) { import('react-hot-toast').then(m => m.default.error('Lead has no email address')); return; }
-                            return;
-                          }
-                          setEmailSending(true)
-                          try {
-                            const token = currentUser ? await currentUser.getIdToken() : ''
-                            const res = await fetch(`${API}/email/chat/send`, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({
-                                lead_id: selectedLead.id,
-                                to_email: selectedLead.email,
-                                to_name: selectedLead.fullName,
-                                subject: emailSubject,
-                                body: messageText.trim(),
-                              }),
-                            })
-                            if (!res.ok) throw new Error('Failed to send')
-                            import('react-hot-toast').then(m => m.default.success('Email sent via Brevo!'))
-                            setMessageText('')
-                            setEmailSubject('')
-                          } catch {
-                            import('react-hot-toast').then(m => m.default.error('Failed to send email'))
-                          } finally {
-                            setEmailSending(false)
-                          }
-                        }}
-                        className="btn-primary px-4 self-end"
-                      >
-                        {emailSending ? <RefreshCw size={14} className="animate-spin" /> : <><Mail size={14} /> Send</>}
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-orange-400 flex items-center gap-1">
-                      <AlertCircle size={10} />
-                      Sending to: {selectedLead.email || 'No email on file'}
-                    </p>
-                  </div>
-                ) : (
-                  // ── Normal Chat Input ─────────────────────────────────────
                   <div className="flex gap-2">
-                  {/* Simulate customer client sending message */}
-                  {chatMode === 'whatsapp' && (
-                    <button
-                      onClick={() => handleSend('client')}
-                      disabled={!messageText.trim()}
-                      className="btn-secondary px-3"
-                      title="Simulate customer reply (Trigger AI Bot)"
-                    >
-                      <User size={15} className="text-slate-500" />
-                    </button>
-                  )}
-                  
                   <input
                     type="text"
-                    placeholder={
-                      chatMode === 'whatsapp'
-                        ? 'Simulate customer message (clicks left icon) or type agent reply...'
-                        : 'Type customer message...'
-                    }
+                    placeholder={'Type WhatsApp message...'}
                     value={messageText}
                     onChange={e => setMessageText(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === 'Enter') handleSend('agent')
+                      if (e.key === 'Enter') handleSend()
                     }}
                     className="input-field flex-1"
                   />
                   
                   <button
-                    onClick={() => handleSend('agent')}
-                    disabled={!messageText.trim()}
-                    className="btn-primary"
+                    onClick={() => handleSend()}
+                    disabled={!messageText.trim() || sending}
+                    className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
                   >
-                    <Send size={15} />
-                    Send
+                    {sending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+                    Send via WhatsApp
                   </button>
                 </div>
-                )}
-                
-                {/* Mode notices / helpers */}
-                {chatMode !== 'email' && (
-                <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500">
-                  {chatMode === 'whatsapp' ? (
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <AlertCircle size={10} />
-                      WhatsApp Sandbox Simulator: Use client button (user icon) to simulate customer incoming chats!
-                    </span>
-                  ) : (
-                    <span>Conversing as Agent</span>
-                  )}
-                </div>
-                )}
               </div>
             </>
           ) : (

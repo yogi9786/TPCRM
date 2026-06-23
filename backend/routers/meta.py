@@ -3,11 +3,13 @@ Meta (Facebook/Instagram) Lead Ads + Messaging router
 Handles: webhook verification, lead import, Meta Messenger messages, sync
 """
 from fastapi import APIRouter, Request, HTTPException, Query, Response, Depends, Body
+from pydantic import BaseModel
 from datetime import datetime
 from services.firebase_service import get_db
 from services.meta_service import (
     verify_meta_signature, get_lead_details, get_lead_forms,
-    fetch_leads_from_form, get_meta_config_status, get_historical_conversations
+    fetch_leads_from_form, get_meta_config_status, get_historical_conversations,
+    send_message_to_meta
 )
 from config import META_VERIFY_TOKEN
 from auth import get_current_user
@@ -470,7 +472,11 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             "reason": "META_PAGE_ID is not set. Add it in your Render environment variables."
         }
 
-    data = get_historical_conversations()
+    fb_data = get_historical_conversations(platform="MESSENGER")
+    ig_data = get_historical_conversations(platform="INSTAGRAM")
+
+    # Merge errors if both fail, otherwise just process what we get
+    data = fb_data if "error" in fb_data and "error" in ig_data else {}
 
     # Handle Meta API errors gracefully — don't crash the app
     if "error" in data:
@@ -498,9 +504,10 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             "new_messages_synced": 0,
             "reason": friendly,
             "meta_error": err,
+            "meta_error": err,
         }
 
-    convos = data.get("data", [])
+    convos = fb_data.get("data", []) + ig_data.get("data", [])
     db = get_db()
     new_messages = 0
 
@@ -539,7 +546,7 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
                 "direction": direction,
                 "text": m.get("message", ""),
                 "attachments": [],
-                "source": "facebook",
+                "source": "instagram" if "instagram" in str(m.get("id", "")) or "ig" in str(convo.get("id", "")) else "facebook",
                 "timestamp": m.get("created_time", ""),
                 "createdAt": datetime.utcnow().isoformat() + "Z",
                 "read": True,
@@ -560,6 +567,42 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
         "conversations_found": len(convos),
     }
 
+class MetaMessageSend(BaseModel):
+    recipient_id: str
+    text: str
+    source: str = "facebook"
+
+@router.post("/messages/send")
+async def send_meta_message(payload: MetaMessageSend, user: dict = Depends(get_current_user)):
+    """Send a message to a Meta user (FB/IG)."""
+    config = get_meta_config_status()
+    if not config.get("page_access_token_set"):
+        raise HTTPException(status_code=400, detail="META_PAGE_ACCESS_TOKEN not configured")
+    
+    res = send_message_to_meta(payload.recipient_id, payload.text)
+    if "error" in res:
+        raise HTTPException(status_code=400, detail=str(res["error"]))
+        
+    mid = res.get("message_id", f"out_{int(datetime.utcnow().timestamp())}")
+    now = datetime.utcnow().isoformat()
+    db = get_db()
+    
+    msg_doc = {
+        "mid": mid,
+        "senderId": payload.recipient_id, # Target user
+        "senderName": "Page",
+        "recipientId": "page",
+        "pageId": "page",
+        "direction": "outbound",
+        "text": payload.text,
+        "attachments": [],
+        "source": payload.source,
+        "timestamp": now,
+        "createdAt": now + "Z",
+        "read": True,
+    }
+    db.collection("meta_messages").add(msg_doc)
+    return {"status": "success", "message_id": mid}
 
 # ── Sync from Meta Graph API ───────────────────────────────────────────────────
 
@@ -713,3 +756,5 @@ def _ensure_lead_for_sender(db, sender_id: str, source: str, sender_name: str = 
             db.collection("leads").add(lead_doc)
     except Exception as e:
         print(f"Error ensuring lead for sender: {e}")
+
+# force reload

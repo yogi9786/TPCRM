@@ -3,11 +3,11 @@ import MainLayout from '../layouts/MainLayout'
 import {
   Workflow, Plus, Search, Play, Pause, Edit2, Trash2, X, Zap
 } from 'lucide-react'
-import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+
+const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
 
 export default function Automations() {
   const { currentUser } = useAuth()
@@ -17,15 +17,33 @@ export default function Automations() {
   const [form, setForm] = useState({ name: '', trigger: 'Lead Created', action: 'Send Email' })
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    if (!currentUser) return
-    const q = query(collection(db, 'automations'), where('userId', '==', currentUser.uid))
-    const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setAutomations(data)
-      setLoading(false)
+  const [saving, setSaving] = useState(false)
+
+  async function apiFetch(path: string, opts: RequestInit = {}) {
+    if (!currentUser) throw new Error('No user')
+    const t = await currentUser.getIdToken()
+    const res = await fetch(`${API}${path}`, {
+      ...opts,
+      headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', ...opts.headers },
     })
-    return unsub
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || `Error ${res.status}`)
+    }
+    return res.json()
+  }
+
+  async function fetchAutomations() {
+    if (!currentUser) return
+    try {
+      const data = await apiFetch('/automations/')
+      setAutomations(data)
+    } catch { toast.error('Failed to load automations') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    fetchAutomations()
   }, [currentUser])
 
   function openAdd() {
@@ -35,28 +53,36 @@ export default function Automations() {
 
   async function save() {
     if (!form.name) return toast.error('Name required')
+    setSaving(true)
     try {
       const payload = {
         name: form.name,
         trigger: form.trigger,
         actions: [{ type: form.action }],
         isActive: true,
-        userId: currentUser!.uid,
       }
-      await addDoc(collection(db, 'automations'), { ...payload, createdAt: new Date().toISOString() })
+      await apiFetch('/automations/', { method: 'POST', body: JSON.stringify(payload) })
       toast.success('Automation created')
       setShowModal(false)
-    } catch { toast.error('Failed to save') }
+      fetchAutomations()
+    } catch (e: any) { toast.error(e.message || 'Failed to save') }
+    finally { setSaving(false) }
   }
 
   async function deleteAuto(id: string) {
     if (!confirm('Delete automation?')) return
-    await deleteDoc(doc(db, 'automations', id))
-    toast.success('Deleted')
+    try {
+      await apiFetch(`/automations/${id}`, { method: 'DELETE' })
+      toast.success('Deleted')
+      fetchAutomations()
+    } catch { toast.error('Failed to delete') }
   }
 
   async function toggleActive(id: string, current: boolean) {
-    await updateDoc(doc(db, 'automations', id), { isActive: !current })
+    try {
+      await apiFetch(`/automations/${id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !current }) })
+      fetchAutomations()
+    } catch { toast.error('Failed to update') }
   }
 
   const filtered = automations.filter(a => a.name.toLowerCase().includes(search.toLowerCase()))
@@ -154,8 +180,8 @@ export default function Automations() {
               </div>
             </div>
             <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={save} className="btn-primary">Create Workflow</button>
+              <button onClick={() => setShowModal(false)} className="btn-secondary" disabled={saving}>Cancel</button>
+              <button onClick={save} className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Create Workflow'}</button>
             </div>
           </div>
         </div>

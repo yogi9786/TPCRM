@@ -181,7 +181,7 @@ def get_meta_campaigns(ad_account_id: Optional[str] = None) -> dict:
         return {"error": str(e), "data": []}
 
 
-def get_historical_conversations(page_id: Optional[str] = None) -> dict:
+def get_historical_conversations(page_id: Optional[str] = None, platform: str = "MESSENGER") -> dict:
     """Fetch existing conversations and messages from Meta Page."""
     pid = page_id or META_PAGE_ID
     if not pid or pid in ("", "YOUR_PAGE_ID_HERE"):
@@ -190,11 +190,35 @@ def get_historical_conversations(page_id: Optional[str] = None) -> dict:
     url = f"{GRAPH_BASE}/{pid}/conversations"
     params = {
         "access_token": META_PAGE_ACCESS_TOKEN,
+        "platform": platform,
         "fields": "id,updated_time,participants,messages.limit(20){id,message,created_time,from,to,attachments}",
         "limit": 50,
     }
     try:
         response = requests.get(url, params=params, timeout=15)
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+def send_message_to_meta(recipient_id: str, text: str) -> dict:
+    """Send a message response to a Meta user (Facebook or Instagram) using the Page Token."""
+    if not META_PAGE_ACCESS_TOKEN or META_PAGE_ACCESS_TOKEN in ("", "YOUR_LONG_LIVED_PAGE_ACCESS_TOKEN_HERE"):
+        return {"error": "META_PAGE_ACCESS_TOKEN not configured"}
+        
+    pid = META_PAGE_ID
+    if not pid or pid in ("", "YOUR_PAGE_ID_HERE"):
+        return {"error": "META_PAGE_ID not configured"}
+        
+    url = f"{GRAPH_BASE}/{pid}/messages"
+    params = {"access_token": META_PAGE_ACCESS_TOKEN}
+    payload = {
+        "recipient": {"id": recipient_id},
+        "message": {"text": text},
+        "messaging_type": "RESPONSE"
+    }
+    
+    try:
+        response = requests.post(url, params=params, json=payload, timeout=15)
         return response.json()
     except Exception as e:
         return {"error": str(e)}

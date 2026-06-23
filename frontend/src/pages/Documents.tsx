@@ -3,11 +3,11 @@ import MainLayout from '../layouts/MainLayout'
 import {
   FileText, Plus, Search, Download, Trash2, X, File, FileSignature, FileSpreadsheet
 } from 'lucide-react'
-import { collection, query, where, onSnapshot, addDoc, doc, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+
+const API = import.meta.env.VITE_API_URL || 'https://tpcrm.onrender.com'
 
 const TYPES = ['Proposal', 'Invoice', 'Contract', 'Other']
 
@@ -19,15 +19,33 @@ export default function Documents() {
   const [form, setForm] = useState({ title: '', type: 'Proposal', fileUrl: '' })
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    if (!currentUser) return
-    const q = query(collection(db, 'documents'), where('userId', '==', currentUser.uid))
-    const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setDocuments(data)
-      setLoading(false)
+  const [saving, setSaving] = useState(false)
+
+  async function apiFetch(path: string, opts: RequestInit = {}) {
+    if (!currentUser) throw new Error('No user')
+    const t = await currentUser.getIdToken()
+    const res = await fetch(`${API}${path}`, {
+      ...opts,
+      headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', ...opts.headers },
     })
-    return unsub
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || `Error ${res.status}`)
+    }
+    return res.json()
+  }
+
+  async function fetchDocuments() {
+    if (!currentUser) return
+    try {
+      const data = await apiFetch('/documents/')
+      setDocuments(data)
+    } catch { toast.error('Failed to load documents') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    fetchDocuments()
   }, [currentUser])
 
   function openAdd() {
@@ -37,18 +55,24 @@ export default function Documents() {
 
   async function save() {
     if (!form.title || !form.fileUrl) return toast.error('Title and File URL are required')
+    setSaving(true)
     try {
-      const payload = { ...form, userId: currentUser!.uid }
-      await addDoc(collection(db, 'documents'), { ...payload, createdAt: new Date().toISOString() })
+      const payload = { ...form }
+      await apiFetch('/documents/', { method: 'POST', body: JSON.stringify(payload) })
       toast.success('Document added')
       setShowModal(false)
-    } catch { toast.error('Failed to save') }
+      fetchDocuments()
+    } catch (e: any) { toast.error(e.message || 'Failed to save') }
+    finally { setSaving(false) }
   }
 
   async function deleteDocRecord(id: string) {
     if (!confirm('Delete document?')) return
-    await deleteDoc(doc(db, 'documents', id))
-    toast.success('Deleted')
+    try {
+      await apiFetch(`/documents/${id}`, { method: 'DELETE' })
+      toast.success('Deleted')
+      fetchDocuments()
+    } catch { toast.error('Failed to delete') }
   }
 
   const filtered = documents.filter(d => d.title.toLowerCase().includes(search.toLowerCase()))
@@ -139,8 +163,8 @@ export default function Documents() {
               </div>
             </div>
             <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={save} className="btn-primary">Save Document</button>
+              <button onClick={() => setShowModal(false)} className="btn-secondary" disabled={saving}>Cancel</button>
+              <button onClick={save} className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Document'}</button>
             </div>
           </div>
         </div>
