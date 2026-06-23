@@ -2,6 +2,7 @@
 Team router — Manage CRM team members with credentials and roles
 Supports: Create/Read/Update/Delete team members, invite by email
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from pydantic import BaseModel
@@ -181,6 +182,7 @@ def build_welcome_email(name: str, email: str, username: str, password: str, rol
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/members")
+@cache(expire=30)
 async def get_team_members(user: dict = Depends(get_current_user)):
     """Get all team members for this account."""
     db = get_db()
@@ -211,6 +213,7 @@ async def get_team_members(user: dict = Depends(get_current_user)):
 
 
 @router.get("/roles")
+@cache(expire=30)
 async def get_role_templates():
     """Get all available role definitions."""
     return ROLE_TEMPLATES
@@ -269,6 +272,7 @@ async def create_team_member(member: TeamMemberCreate, user: dict = Depends(get_
 
 
 @router.get("/members/{member_id}")
+@cache(expire=30)
 async def get_team_member(member_id: str, user: dict = Depends(get_current_user)):
     """Get a single team member by ID."""
     db = get_db()

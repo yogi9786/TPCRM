@@ -2,6 +2,7 @@
 Lead management router — CRUD operations on Firestore 'leads' collection
 Includes: activities, notes, WhatsApp message history, Meta form data
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from models.lead import LeadCreate, LeadUpdate, LeadResponse
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 
 
 @router.get("/", response_model=list[dict])
+@cache(expire=30)
 async def get_leads(
     status: Optional[str] = None,
     source: Optional[str] = None,
@@ -54,6 +56,7 @@ async def get_leads(
 
 
 @router.get("/stats")
+@cache(expire=30)
 async def get_lead_stats(user: dict = Depends(get_current_user)):
     """Aggregate lead statistics for the authenticated user."""
     db = get_db()
@@ -77,6 +80,7 @@ async def get_lead_stats(user: dict = Depends(get_current_user)):
 
 
 @router.get("/{lead_id}/activities")
+@cache(expire=30)
 async def get_lead_activities(lead_id: str, user: dict = Depends(get_current_user)):
     """Get full activity timeline for a lead (imports, status changes, messages, notes)."""
     db = get_db()
@@ -117,6 +121,7 @@ async def add_lead_note(
 
 
 @router.get("/{lead_id}/messages")
+@cache(expire=30)
 async def get_lead_messages(lead_id: str, user: dict = Depends(get_current_user)):
     """Get WhatsApp message history for a lead by phone number."""
     db = get_db()
@@ -139,6 +144,7 @@ async def get_lead_messages(lead_id: str, user: dict = Depends(get_current_user)
 
 
 @router.get("/{lead_id}/meta-data")
+@cache(expire=30)
 async def get_lead_meta_data(lead_id: str, user: dict = Depends(get_current_user)):
     """Get the original Meta form field data for a lead."""
     db = get_db()
@@ -160,6 +166,7 @@ async def get_lead_meta_data(lead_id: str, user: dict = Depends(get_current_user
 
 
 @router.get("/{lead_id}", response_model=dict)
+@cache(expire=30)
 async def get_lead(lead_id: str, user: dict = Depends(get_current_user)):
     """Get a single lead by ID."""
     db = get_db()

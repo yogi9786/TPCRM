@@ -1,6 +1,7 @@
 """
 WhatsApp router — Send messages and receive Twilio webhooks
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, Request, HTTPException, Form, Response
 from datetime import datetime
 from models.message import SendMessageRequest
@@ -147,6 +148,7 @@ async def twilio_webhook(
 
 
 @router.get("/messages")
+@cache(expire=30)
 async def get_messages(lead_id: str = None, user: dict = Depends(get_current_user)):
     """Get messages for a user, optionally filtered by lead."""
     db = get_db()

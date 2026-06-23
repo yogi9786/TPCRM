@@ -12,9 +12,23 @@ from auth import router as auth_router, get_current_user
 
 import os
 from contextlib import asynccontextmanager
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from redis import asyncio as aioredis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+    try:
+        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+        # Test connection
+        await redis.ping()
+        FastAPICache.init(RedisBackend(redis), prefix="tekhportal-cache")
+        print("✅ Redis cache initialized")
+    except Exception as e:
+        print(f"⚠️ Failed to connect to Redis. Falling back to InMemoryBackend. Error: {e}")
+        FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
     yield
 
 app = FastAPI(

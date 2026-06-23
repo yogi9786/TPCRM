@@ -1,3 +1,4 @@
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, Depends
 from datetime import datetime
 from collections import defaultdict
@@ -7,6 +8,7 @@ from auth import get_current_user
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 @router.get("/")
+@cache(expire=30)
 async def get_dashboard_analytics(user: dict = Depends(get_current_user)):
     db = get_db()
     uid = user["uid"]

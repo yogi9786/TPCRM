@@ -1,3 +1,4 @@
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from models.deal import DealCreate, DealUpdate
@@ -7,6 +8,7 @@ from auth import get_current_user
 router = APIRouter(prefix="/deals", tags=["deals"])
 
 @router.get("/")
+@cache(expire=30)
 async def get_deals(user: dict = Depends(get_current_user)):
     db = get_db()
     docs = db.collection("deals").where("userId", "==", user["uid"]).stream()

@@ -4,42 +4,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Zap, Users, BarChart3, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-/* ── Animated counter ── */
-function AnimatedCounter({ to, label, suffix = '' }: { to: number; label: string; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        let start = 0
-        const step = Math.ceil(to / 40)
-        const timer = setInterval(() => {
-          start += step
-          if (start >= to) { setCount(to); clearInterval(timer) }
-          else setCount(start)
-        }, 30)
-      }
-    }, { threshold: 0.1 })
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [to])
-  return (
-    <div ref={ref} className="text-center">
-      <p className="text-3xl font-black tabular-nums leading-none" style={{ color: '#FFC263', letterSpacing: '-0.04em' }}>{count}{suffix}</p>
-      <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</p>
-    </div>
-  )
-}
-
-/* ── Feature pill ── */
-function FeaturePill({ icon: Icon, label }: { icon: any; label: string }) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-      <Icon size={14} style={{ color: '#FFC263' }} />
-      <span className="text-xs font-semibold text-white/80">{label}</span>
-    </div>
-  )
-}
 
 export default function Login() {
   const [email, setEmail]               = useState('')
@@ -48,6 +12,24 @@ export default function Login() {
   const [loading, setLoading]           = useState(false)
   const { login }                       = useAuth()
   const navigate                        = useNavigate()
+
+  const glowRef = useRef<HTMLDivElement>(null)
+  const parallaxRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (glowRef.current) {
+        glowRef.current.style.transform = `translate(${e.clientX - 200}px, ${e.clientY - 200}px)`
+      }
+      if (parallaxRef.current) {
+        const x = (e.clientX / window.innerWidth - 0.5) * -40
+        const y = (e.clientY / window.innerHeight - 0.5) * -40
+        parallaxRef.current.style.transform = `translate(${x}px, ${y}px)`
+      }
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -74,11 +56,6 @@ export default function Login() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        @keyframes morphBlob {
-          0%   { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
-          50%  { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; }
-          100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
-        }
         @keyframes scanLine {
           0%   { transform: translateY(-200%); opacity: 0; }
           20%  { opacity: 0.6; }
@@ -86,93 +63,93 @@ export default function Login() {
           100% { transform: translateY(600%); opacity: 0; }
         }
         @keyframes spinOrbit { to { transform: rotate(360deg); } }
-        @keyframes counterSpin { to { transform: rotate(-360deg); } }
         @keyframes goldGlow {
           0%, 100% { opacity: 0.35; }
           50%       { opacity: 0.65; }
         }
+        @keyframes float1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%      { transform: translate(50px, -50px) scale(1.1); }
+          66%      { transform: translate(-30px, 20px) scale(0.9); }
+        }
+        @keyframes float2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%      { transform: translate(-50px, 30px) scale(1.2); }
+          66%      { transform: translate(40px, -40px) scale(0.8); }
+        }
+        @keyframes float3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%      { transform: translate(30px, 50px) scale(0.9); }
+          66%      { transform: translate(-40px, -20px) scale(1.1); }
+        }
       `}</style>
 
-      <div className="min-h-screen flex flex-col lg:flex-row" style={{ background: '#f0f0f9' }}>
+      <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden" 
+           style={{ background: 'linear-gradient(150deg, #0c0b6e 0%, #100F88 40%, #1a19c0 80%, #2020b8 100%)', backgroundSize: '300% 300%', animation: 'gradientDrift 10s ease infinite' }}>
+
+        {/* ══ FULLSCREEN ANIMATED BACKGROUND ══ */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          
+          {/* Interactive Mouse Glow */}
+          <div ref={glowRef} className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full mix-blend-screen opacity-70 blur-[70px] z-20 will-change-transform hidden md:block" 
+               style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.35) 0%, transparent 70%)', transition: 'transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1)' }} />
+
+          {/* Parallax Container */}
+          <div ref={parallaxRef} className="absolute inset-[-50px] will-change-transform" style={{ transition: 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+            {/* Dot grid background */}
+            <div className="absolute inset-0"
+              style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+
+            {/* Floating dynamic blobs */}
+            <div className="absolute top-0 left-10 w-80 h-80 rounded-full mix-blend-screen opacity-40 blur-[80px]" 
+                 style={{ background: '#FFC263', animation: 'float1 14s ease-in-out infinite' }} />
+            <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full mix-blend-screen opacity-30 blur-[100px]" 
+                 style={{ background: '#4d4bdf', animation: 'float2 18s ease-in-out infinite' }} />
+            <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full mix-blend-screen opacity-20 blur-[60px]" 
+                 style={{ background: '#f0a832', animation: 'float3 12s ease-in-out infinite' }} />
+
+            {/* Gold glow orb top-left */}
+            <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.18) 0%, transparent 70%)', animation: 'goldGlow 4s ease-in-out infinite, float1 20s ease-in-out infinite' }} />
+
+            {/* Gold glow orb bottom-right */}
+            <div className="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.12) 0%, transparent 70%)', animation: 'goldGlow 6s ease-in-out infinite reverse, float2 24s ease-in-out infinite' }} />
+
+            {/* Scan line */}
+            <div className="absolute left-0 right-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,194,99,0.5), transparent)', animation: 'scanLine 8s ease-in-out infinite' }} />
+
+            {/* Spinning orbit rings */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+              <div className="w-[600px] h-[600px] rounded-full border border-white/5" style={{ animation: 'spinOrbit 60s linear infinite' }} />
+              <div className="absolute inset-8 rounded-full border border-white/8" style={{ animation: 'spinOrbit 40s linear infinite reverse' }} />
+              <div className="absolute inset-20 rounded-full border border-white/6" style={{ animation: 'spinOrbit 25s linear infinite' }} />
+            </div>
+          </div>
+        </div>
 
         {/* ══ LEFT — Hero panel ══════════════════════════════════════════════ */}
-        <div
-          className="hidden md:flex flex-col flex-1 relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(150deg, #0c0b6e 0%, #100F88 40%, #1a19c0 80%, #2020b8 100%)',
-            backgroundSize: '300% 300%',
-            animation: 'gradientDrift 10s ease infinite',
-          }}
-        >
-          {/* Dot grid background */}
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
-
-          {/* Gold glow orb top-left */}
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.18) 0%, transparent 70%)', animation: 'goldGlow 4s ease-in-out infinite' }} />
-
-          {/* Gold glow orb bottom-right */}
-          <div className="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,194,99,0.12) 0%, transparent 70%)', animation: 'goldGlow 6s ease-in-out infinite reverse' }} />
-
-          {/* Scan line */}
-          <div className="absolute left-0 right-0 h-px pointer-events-none"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,194,99,0.5), transparent)', animation: 'scanLine 8s ease-in-out infinite' }} />
-
-          {/* Spinning orbit rings */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-[600px] h-[600px] rounded-full border border-white/5" style={{ animation: 'spinOrbit 60s linear infinite' }} />
-            <div className="absolute inset-8 rounded-full border border-white/8" style={{ animation: 'spinOrbit 40s linear infinite reverse' }} />
-            <div className="absolute inset-20 rounded-full border border-white/6" style={{ animation: 'spinOrbit 25s linear infinite' }} />
-          </div>
+        <div className="hidden md:flex flex-col flex-1 relative z-10">
 
           {/* Content */}
-          <div className="relative z-10 flex flex-col h-full px-10 py-10 lg:px-14 lg:py-12 justify-between max-w-2xl">
+          <div className="relative z-10 flex flex-col h-full px-10 py-10 lg:px-14 lg:py-12 justify-between max-w-2xl transition-transform duration-500 hover:-translate-y-2 hover:scale-[1.02]">
 
             {/* Logo */}
             <div className="flex items-center gap-3 animate-fade-in">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FFC263, #f0a832)', boxShadow: '0 4px 16px rgba(255,194,99,0.45)' }}>
-                <Zap size={20} color="#100F88" strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="font-black text-white text-lg leading-none tracking-tight">TekhPortal</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#FFC263' }}>CRM Suite</p>
+              <div className="bg-white p-3 rounded-2xl shadow-lg">
+                <img src="/tekhportal.webp" alt="TekhPortal" className="h-16 lg:h-24 w-auto object-contain" />
               </div>
             </div>
 
             {/* Main copy */}
             <div className="flex-1 flex flex-col justify-center py-12">
-              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-6 w-fit"
-                style={{ background: 'rgba(255,194,99,0.15)', border: '1px solid rgba(255,194,99,0.30)', color: '#FFC263' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                All-in-One Agency CRM Suite
-              </div>
-
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-[1.05] mb-5" style={{ letterSpacing: '-0.035em' }}>
-                Close more deals,<br />
-                <span style={{ color: '#FFC263' }}>grow your agency.</span>
+              <h1 className="text-4xl lg:text-5xl font-black text-white leading-[1.1] mb-5" style={{ letterSpacing: '-0.035em' }}>
+                Welcome to<br />
+                <span style={{ color: '#FFC263' }}>TekhPortal CRM.</span>
               </h1>
 
               <p className="text-sm lg:text-base leading-relaxed max-w-sm font-medium mb-10" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                The unified platform to manage leads, clients, campaigns and automate marketing — all from one dashboard.
+                Internal management portal for leads, clients, campaigns, and team collaboration.
               </p>
-
-              {/* Feature pills */}
-              <div className="flex flex-wrap gap-2 mb-10">
-                <FeaturePill icon={Users} label="Lead Management" />
-                <FeaturePill icon={MessageCircle} label="WhatsApp Automation" />
-                <FeaturePill icon={BarChart3} label="Analytics" />
-                <FeaturePill icon={Zap} label="Campaign Builder" />
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center gap-8 rounded-2xl px-6 py-5 w-fit"
-                style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}>
-                <AnimatedCounter to={2400} label="Leads" suffix="+" />
-                <div className="w-px h-10" style={{ background: 'rgba(255,255,255,0.10)' }} />
-                <AnimatedCounter to={98} label="Uptime %" />
-                <div className="w-px h-10" style={{ background: 'rgba(255,255,255,0.10)' }} />
-                <AnimatedCounter to={340} label="Users" suffix="+" />
-              </div>
             </div>
 
             <p className="text-[11px] font-medium animate-fade-in" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -182,19 +159,13 @@ export default function Login() {
         </div>
 
         {/* ══ RIGHT — Login form ══════════════════════════════════════════════ */}
-        <div className="flex-1 lg:max-w-[500px] xl:max-w-[560px] flex items-center justify-center p-6 lg:p-12 relative z-20 min-h-screen md:min-h-0 bg-white"
+        <div className="flex-1 lg:max-w-[500px] xl:max-w-[560px] flex items-center justify-center p-4 sm:p-8 lg:p-12 relative z-20 min-h-screen md:min-h-0 md:bg-white"
           style={{ boxShadow: '-16px 0 48px rgba(16,15,136,0.12)' }}>
-          <div className="w-full max-w-[400px] animate-slide-up">
+          <div className="w-full max-w-[400px] bg-white/95 md:bg-transparent backdrop-blur-2xl md:backdrop-blur-none p-8 md:p-0 rounded-3xl md:rounded-none shadow-2xl md:shadow-none animate-slide-up">
 
             {/* Mobile logo */}
-            <div className="flex md:hidden items-center gap-3 mb-10">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #100F88, #1a19c0)', boxShadow: '0 4px 12px rgba(16,15,136,0.35)' }}>
-                <Zap size={20} color="#FFC263" strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="font-black text-base leading-none" style={{ color: '#100F88' }}>TekhPortal</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#FFC263' }}>CRM Suite</p>
-              </div>
+            <div className="flex md:hidden items-center gap-3 mb-10 transition-transform duration-500 hover:-translate-y-1 hover:scale-105">
+              <img src="/tekhportal.webp" alt="TekhPortal" className="h-20 w-auto object-contain" />
             </div>
 
             {/* Heading */}

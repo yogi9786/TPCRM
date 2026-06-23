@@ -2,6 +2,7 @@
 Clients router — Full client lifecycle management for agency use
 Supports: Client profiles, contacts, services, payments, documents, meeting notes
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from datetime import datetime
 from pydantic import BaseModel
@@ -110,6 +111,7 @@ def _get_client_or_404(db, client_id: str, user_uid: str) -> dict:
 # ── Client CRUD ───────────────────────────────────────────────────────────────
 
 @router.get("/")
+@cache(expire=30)
 async def list_clients(
     status: Optional[str] = None,
     tier: Optional[str] = None,
@@ -146,6 +148,7 @@ async def create_client(client: ClientCreate, user: dict = Depends(get_current_u
 
 
 @router.get("/summary")
+@cache(expire=30)
 async def get_clients_summary(user: dict = Depends(get_current_user)):
     """Aggregate stats across all clients."""
     db = get_db()
@@ -170,6 +173,7 @@ async def get_clients_summary(user: dict = Depends(get_current_user)):
 
 
 @router.get("/{client_id}")
+@cache(expire=30)
 async def get_client(client_id: str, user: dict = Depends(get_current_user)):
     """Get a single client with all sub-documents."""
     db = get_db()

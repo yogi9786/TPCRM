@@ -1,3 +1,4 @@
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from models.automation import AutomationCreate, AutomationUpdate
@@ -7,6 +8,7 @@ from auth import get_current_user
 router = APIRouter(prefix="/automations", tags=["automations"])
 
 @router.get("/")
+@cache(expire=30)
 async def get_automations(user: dict = Depends(get_current_user)):
     db = get_db()
     docs = db.collection("automations").where("userId", "==", user["uid"]).stream()

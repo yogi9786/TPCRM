@@ -1,6 +1,7 @@
 """
 Email router — send, history, logs via Brevo
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
@@ -129,6 +130,7 @@ async def send_chat_email(
 
 
 @router.get("/history")
+@cache(expire=30)
 async def get_email_history(
     lead_id: Optional[str] = None,
     limit: int = 50,
@@ -153,6 +155,7 @@ async def get_email_history(
 
 
 @router.get("/logs/brevo")
+@cache(expire=30)
 async def get_brevo_logs(
     limit: int = 50,
     offset: int = 0,
@@ -166,6 +169,7 @@ async def get_brevo_logs(
 
 
 @router.get("/logs/brevo/{message_id}")
+@cache(expire=30)
 async def get_brevo_log_detail(
     message_id: str,
     user: dict = Depends(get_current_user),

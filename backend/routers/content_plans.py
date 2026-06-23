@@ -1,6 +1,7 @@
 """
 Content Planner router — Plan, schedule, and manage content across channels
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from models.content_plan import ContentPlanCreate, ContentPlanUpdate
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/content-plans", tags=["content-plans"])
 
 
 @router.get("/")
+@cache(expire=30)
 async def get_content_plans(
     platform: str = None,
     status: str = None,
@@ -51,6 +53,7 @@ async def create_content_plan(
 
 
 @router.get("/{plan_id}")
+@cache(expire=30)
 async def get_content_plan(plan_id: str, user: dict = Depends(get_current_user)):
     db = get_db()
     doc = db.collection("content_plans").document(plan_id).get()

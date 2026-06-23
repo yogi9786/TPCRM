@@ -2,6 +2,7 @@
 Meta (Facebook/Instagram) Lead Ads + Messaging router
 Handles: webhook verification, lead import, Meta Messenger messages, sync
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, Request, HTTPException, Query, Response, Depends, Body
 from pydantic import BaseModel
 from datetime import datetime
@@ -24,6 +25,7 @@ GRAPH_BASE = "https://graph.facebook.com/v21.0"
 # ── Webhook Verification (GET) ─────────────────────────────────────────────────
 
 @router.get("/webhook")
+@cache(expire=30)
 async def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
@@ -212,12 +214,14 @@ async def receive_webhook(request: Request):
 # ── Config & Status ────────────────────────────────────────────────────────────
 
 @router.get("/config/status")
+@cache(expire=30)
 async def get_config_status(user: dict = Depends(get_current_user)):
     """Check which Meta credentials are configured."""
     return get_meta_config_status()
 
 
 @router.get("/debug")
+@cache(expire=30)
 async def debug_meta_config():
     """Public debug endpoint — shows Meta config status (no auth required).
     Use this to verify env vars are loaded on Render."""
@@ -238,6 +242,7 @@ async def debug_meta_config():
 # ── Meta Leads ─────────────────────────────────────────────────────────────────
 
 @router.get("/leads")
+@cache(expire=30)
 async def get_meta_leads(
     imported: Optional[bool] = None,
     source: Optional[str] = None,
@@ -261,6 +266,7 @@ async def get_meta_leads(
 
 
 @router.get("/leads/stats")
+@cache(expire=30)
 async def get_meta_lead_stats(user: dict = Depends(get_current_user)):
     """Aggregate stats for Meta leads."""
     db = get_db()
@@ -365,6 +371,7 @@ async def import_all_meta_leads(user: dict = Depends(get_current_user)):
 # ── Messages ───────────────────────────────────────────────────────────────────
 
 @router.get("/messages")
+@cache(expire=30)
 async def get_meta_messages(
     source: Optional[str] = None,
     sender_id: Optional[str] = None,
@@ -388,6 +395,7 @@ async def get_meta_messages(
 
 
 @router.get("/messages/stats")
+@cache(expire=30)
 async def get_message_stats(user: dict = Depends(get_current_user)):
     """Message stats: total, unread, by source."""
     db = get_db()
@@ -406,6 +414,7 @@ async def get_message_stats(user: dict = Depends(get_current_user)):
 
 
 @router.get("/messages/conversations")
+@cache(expire=30)
 async def get_conversations(user: dict = Depends(get_current_user)):
     """Group messages by sender (conversation threads)."""
     db = get_db()
@@ -701,6 +710,7 @@ async def subscribe_webhook(
 
 
 @router.get("/subscription-status")
+@cache(expire=30)
 async def get_subscription_status(user: dict = Depends(get_current_user)):
     """Check current webhook subscription status."""
     from services.meta_service import get_webhook_subscriptions

@@ -2,6 +2,7 @@
 Campaigns router — Create and manage broadcast campaigns
 Supports: WhatsApp broadcasts, Meta retargeting, scheduling, per-campaign analytics
 """
+from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from models.campaign import CampaignCreate, CampaignUpdate, BroadcastRequest
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
 
 @router.get("/")
+@cache(expire=30)
 async def get_campaigns(
     status: Optional[str] = None,
     campaign_type: Optional[str] = None,
@@ -62,6 +64,7 @@ async def create_campaign(campaign: CampaignCreate, user: dict = Depends(get_cur
 
 
 @router.get("/{campaign_id}")
+@cache(expire=30)
 async def get_campaign(campaign_id: str, user: dict = Depends(get_current_user)):
     """Get a single campaign by ID."""
     db = get_db()
@@ -237,6 +240,7 @@ async def launch_campaign(campaign_id: str, user: dict = Depends(get_current_use
 
 
 @router.get("/{campaign_id}/stats")
+@cache(expire=30)
 async def get_campaign_stats(campaign_id: str, user: dict = Depends(get_current_user)):
     """Get delivery statistics for a campaign."""
     db = get_db()
@@ -262,6 +266,7 @@ async def get_campaign_stats(campaign_id: str, user: dict = Depends(get_current_
 
 
 @router.get("/summary/all")
+@cache(expire=30)
 async def get_campaigns_summary(user: dict = Depends(get_current_user)):
     """Get aggregate summary stats across all campaigns."""
     db = get_db()
