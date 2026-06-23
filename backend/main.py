@@ -19,16 +19,21 @@ from redis import asyncio as aioredis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-    try:
-        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
-        # Test connection
-        await redis.ping()
-        FastAPICache.init(RedisBackend(redis), prefix="tekhportal-cache")
-        print("✅ Redis cache initialized")
-    except Exception as e:
-        print(f"⚠️ Failed to connect to Redis. Falling back to InMemoryBackend. Error: {e}")
+    redis_url = os.getenv("REDIS_URL", "")
+    if not redis_url or "localhost" in redis_url and os.getenv("RENDER"):
+        # On Render, localhost redis won't work. Fallback silently.
         FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
+        print("✅ InMemory cache initialized (No external Redis configured)")
+    else:
+        try:
+            redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+            # Test connection
+            await redis.ping()
+            FastAPICache.init(RedisBackend(redis), prefix="tekhportal-cache")
+            print("✅ Redis cache initialized")
+        except Exception as e:
+            print(f"⚠️ Failed to connect to Redis. Falling back to InMemoryBackend. Error: {e}")
+            FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
     yield
 
 app = FastAPI(
