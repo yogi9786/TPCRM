@@ -212,6 +212,23 @@ async def add_contact(client_id: str, contact: ContactPerson, user: dict = Depen
     return {"success": True, "contacts": contacts}
 
 
+@router.put("/{client_id}/contacts/{contact_idx}")
+async def update_contact(client_id: str, contact_idx: int, contact: ContactPerson, user: dict = Depends(get_current_user)):
+    db = get_db()
+    doc = _get_client_or_404(db, client_id, user["uid"])
+    data = doc.to_dict()
+    contacts = data.get("contacts", [])
+    if contact_idx < 0 or contact_idx >= len(contacts):
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    original_id = contacts[contact_idx].get("id")
+    updated_contact = {**contact.model_dump(), "id": original_id}
+    contacts[contact_idx] = updated_contact
+    
+    db.collection("clients").document(client_id).update({"contacts": contacts, "updatedAt": datetime.utcnow().isoformat()})
+    return {"success": True, "contacts": contacts}
+
+
 @router.delete("/{client_id}/contacts/{contact_idx}")
 async def remove_contact(client_id: str, contact_idx: int, user: dict = Depends(get_current_user)):
     db = get_db()
@@ -235,6 +252,27 @@ async def add_service(client_id: str, service: ServicePurchased, user: dict = De
     services = data.get("services", [])
     new_service = {**service.model_dump(), "id": datetime.utcnow().timestamp(), "addedAt": datetime.utcnow().isoformat()}
     services.append(new_service)
+    total = sum(s.get("amount", 0) for s in services)
+    db.collection("clients").document(client_id).update({
+        "services": services, "totalRevenue": total, "updatedAt": datetime.utcnow().isoformat()
+    })
+    return {"success": True}
+
+
+@router.put("/{client_id}/services/{service_idx}")
+async def update_service(client_id: str, service_idx: int, service: ServicePurchased, user: dict = Depends(get_current_user)):
+    db = get_db()
+    doc = _get_client_or_404(db, client_id, user["uid"])
+    data = doc.to_dict()
+    services = data.get("services", [])
+    if service_idx < 0 or service_idx >= len(services):
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    original_id = services[service_idx].get("id")
+    original_added = services[service_idx].get("addedAt", datetime.utcnow().isoformat())
+    updated_service = {**service.model_dump(), "id": original_id, "addedAt": original_added}
+    services[service_idx] = updated_service
+    
     total = sum(s.get("amount", 0) for s in services)
     db.collection("clients").document(client_id).update({
         "services": services, "totalRevenue": total, "updatedAt": datetime.utcnow().isoformat()
@@ -275,6 +313,27 @@ async def add_payment(client_id: str, payment: PaymentRecord, user: dict = Depen
     return {"success": True}
 
 
+@router.put("/{client_id}/payments/{payment_idx}")
+async def update_payment(client_id: str, payment_idx: int, payment: PaymentRecord, user: dict = Depends(get_current_user)):
+    db = get_db()
+    doc = _get_client_or_404(db, client_id, user["uid"])
+    data = doc.to_dict()
+    payments = data.get("payments", [])
+    if payment_idx < 0 or payment_idx >= len(payments):
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    original_id = payments[payment_idx].get("id")
+    original_recorded = payments[payment_idx].get("recordedAt", datetime.utcnow().isoformat())
+    updated_payment = {**payment.model_dump(), "id": original_id, "recordedAt": original_recorded}
+    payments[payment_idx] = updated_payment
+    
+    total_paid = sum(p.get("amount", 0) for p in payments if p.get("status") == "paid")
+    db.collection("clients").document(client_id).update({
+        "payments": payments, "totalPaid": total_paid, "updatedAt": datetime.utcnow().isoformat()
+    })
+    return {"success": True}
+
+
 @router.delete("/{client_id}/payments/{payment_idx}")
 async def remove_payment(client_id: str, payment_idx: int, user: dict = Depends(get_current_user)):
     db = get_db()
@@ -308,6 +367,27 @@ async def add_meeting(client_id: str, meeting: MeetingNote, user: dict = Depends
     return {"success": True}
 
 
+@router.put("/{client_id}/meetings/{meeting_idx}")
+async def update_meeting(client_id: str, meeting_idx: int, meeting: MeetingNote, user: dict = Depends(get_current_user)):
+    db = get_db()
+    doc = _get_client_or_404(db, client_id, user["uid"])
+    data = doc.to_dict()
+    meetings = data.get("meetingNotes", [])
+    if meeting_idx < 0 or meeting_idx >= len(meetings):
+        raise HTTPException(status_code=404, detail="Meeting not found")
+        
+    original_id = meetings[meeting_idx].get("id")
+    original_created = meetings[meeting_idx].get("createdAt", datetime.utcnow().isoformat())
+    updated_meeting = {**meeting.model_dump(), "id": original_id, "createdAt": original_created}
+    meetings[meeting_idx] = updated_meeting
+    meetings.sort(key=lambda x: x.get("date", ""), reverse=True)
+    
+    db.collection("clients").document(client_id).update({
+        "meetingNotes": meetings, "updatedAt": datetime.utcnow().isoformat()
+    })
+    return {"success": True}
+
+
 @router.delete("/{client_id}/meetings/{meeting_idx}")
 async def remove_meeting(client_id: str, meeting_idx: int, user: dict = Depends(get_current_user)):
     db = get_db()
@@ -333,6 +413,26 @@ async def add_document(client_id: str, document: ClientDocument, user: dict = De
     documents = data.get("documents", [])
     new_doc = {**document.model_dump(), "id": datetime.utcnow().timestamp(), "uploadedAt": datetime.utcnow().isoformat()}
     documents.append(new_doc)
+    db.collection("clients").document(client_id).update({
+        "documents": documents, "updatedAt": datetime.utcnow().isoformat()
+    })
+    return {"success": True}
+
+
+@router.put("/{client_id}/documents/{doc_idx}")
+async def update_document(client_id: str, doc_idx: int, document: ClientDocument, user: dict = Depends(get_current_user)):
+    db = get_db()
+    doc = _get_client_or_404(db, client_id, user["uid"])
+    data = doc.to_dict()
+    documents = data.get("documents", [])
+    if doc_idx < 0 or doc_idx >= len(documents):
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    original_id = documents[doc_idx].get("id")
+    original_uploaded = documents[doc_idx].get("uploadedAt", datetime.utcnow().isoformat())
+    updated_doc = {**document.model_dump(), "id": original_id, "uploadedAt": original_uploaded}
+    documents[doc_idx] = updated_doc
+    
     db.collection("clients").document(client_id).update({
         "documents": documents, "updatedAt": datetime.utcnow().isoformat()
     })

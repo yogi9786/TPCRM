@@ -106,6 +106,7 @@ export default function Clients() {
   const [showAddDoc, setShowAddDoc]           = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [docUploading, setDocUploading]       = useState(false)
+  const [editingIdx, setEditingIdx]           = useState<number | null>(null)
 
   // Forms
   const [clientForm, setClientForm] = useState<any>({
@@ -205,6 +206,17 @@ export default function Clients() {
     finally { setSaving(false) }
   }
 
+  async function putSub(path: string, body: any, successMsg: string) {
+    setSaving(true)
+    try {
+      await apiFetch(`/clients/${selected.id}${path}`, { method: 'PUT', body: JSON.stringify(body) })
+      toast.success(successMsg)
+      await refreshSelected(selected.id)
+      return true
+    } catch (e: any) { toast.error(e.message); return false }
+    finally { setSaving(false) }
+  }
+
   async function deleteSub(path: string, successMsg: string) {
     try {
       await apiFetch(`/clients/${selected.id}${path}`, { method: 'DELETE' })
@@ -215,33 +227,53 @@ export default function Clients() {
 
   async function handleAddContact() {
     if (!contactForm.name) return toast.error('Contact name required')
-    if (await postSub('/contacts', contactForm, 'Contact added!')) {
+    const path = editingIdx !== null ? `/contacts/${editingIdx}` : '/contacts'
+    const success = editingIdx !== null
+      ? await putSub(path, contactForm, 'Contact updated!')
+      : await postSub(path, contactForm, 'Contact added!')
+    if (success) {
       setContactForm({ name: '', designation: '', email: '', phone: '', isPrimary: false })
       setShowAddContact(false)
+      setEditingIdx(null)
     }
   }
 
   async function handleAddService() {
     if (!serviceForm.name || !serviceForm.amount) return toast.error('Service name and amount required')
-    if (await postSub('/services', { ...serviceForm, amount: parseFloat(serviceForm.amount) }, 'Service added!')) {
+    const path = editingIdx !== null ? `/services/${editingIdx}` : '/services'
+    const success = editingIdx !== null
+      ? await putSub(path, { ...serviceForm, amount: parseFloat(serviceForm.amount as any) }, 'Service updated!')
+      : await postSub(path, { ...serviceForm, amount: parseFloat(serviceForm.amount as any) }, 'Service added!')
+    if (success) {
       setServiceForm({ name: '', description: '', amount: '', currency: 'INR', billingCycle: 'monthly', startDate: '', endDate: '', status: 'active' })
       setShowAddService(false)
+      setEditingIdx(null)
     }
   }
 
   async function handleAddPayment() {
     if (!paymentForm.amount) return toast.error('Amount required')
-    if (await postSub('/payments', { ...paymentForm, amount: parseFloat(paymentForm.amount) }, 'Payment recorded!')) {
+    const path = editingIdx !== null ? `/payments/${editingIdx}` : '/payments'
+    const success = editingIdx !== null
+      ? await putSub(path, { ...paymentForm, amount: parseFloat(paymentForm.amount as any) }, 'Payment updated!')
+      : await postSub(path, { ...paymentForm, amount: parseFloat(paymentForm.amount as any) }, 'Payment recorded!')
+    if (success) {
       setPaymentForm({ amount: '', currency: 'INR', date: new Date().toISOString().split('T')[0], method: 'bank_transfer', reference: '', notes: '', status: 'paid' })
       setShowAddPayment(false)
+      setEditingIdx(null)
     }
   }
 
   async function handleAddMeeting() {
     if (!meetingForm.title || !meetingForm.summary) return toast.error('Title and summary required')
-    if (await postSub('/meetings', meetingForm, 'Meeting note saved!')) {
+    const path = editingIdx !== null ? `/meetings/${editingIdx}` : '/meetings'
+    const success = editingIdx !== null
+      ? await putSub(path, meetingForm, 'Meeting note updated!')
+      : await postSub(path, meetingForm, 'Meeting note saved!')
+    if (success) {
       setMeetingForm({ title: '', date: new Date().toISOString().split('T')[0], attendees: '', summary: '', actionItems: '', nextMeetingDate: '' })
       setShowAddMeeting(false)
+      setEditingIdx(null)
     }
   }
 
@@ -257,10 +289,17 @@ export default function Clients() {
       setDocUploading(false)
     }
     if (!docForm.name || !url) return toast.error('Document name and file/URL required')
-    if (await postSub('/documents', { ...docForm, url }, 'Document added!')) {
+    
+    const path = editingIdx !== null ? `/documents/${editingIdx}` : '/documents'
+    const success = editingIdx !== null
+      ? await putSub(path, { ...docForm, url }, 'Document updated!')
+      : await postSub(path, { ...docForm, url }, 'Document added!')
+      
+    if (success) {
       setDocForm({ name: '', type: 'contract', url: '', notes: '' })
       setDocFile(null)
       setShowAddDoc(false)
+      setEditingIdx(null)
     }
   }
 
@@ -462,9 +501,14 @@ export default function Clients() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selected.contacts.map((c: any, i: number) => (
                     <div key={i} className="border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors relative group">
-                      <button onClick={() => deleteSub(`/contacts/${i}`, 'Contact removed')} className="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                        <X size={13}/>
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => { setContactForm(c); setEditingIdx(i); setShowAddContact(true); }} className="p-1 text-slate-300 hover:text-blue-500">
+                          <Pencil size={13}/>
+                        </button>
+                        <button onClick={() => deleteSub(`/contacts/${i}`, 'Contact removed')} className="p-1 text-slate-300 hover:text-red-500">
+                          <X size={13}/>
+                        </button>
+                      </div>
                       <div className="flex items-start gap-3">
                         <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarColor(c.name)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
                           {c.name.charAt(0).toUpperCase()}
@@ -501,9 +545,14 @@ export default function Clients() {
                 <div className="space-y-3">
                   {selected.services.map((s: any, i: number) => (
                     <div key={i} className="border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors relative group">
-                      <button onClick={() => deleteSub(`/services/${i}`, 'Service removed')} className="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                        <X size={13}/>
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => { setServiceForm(s); setEditingIdx(i); setShowAddService(true); }} className="p-1 text-slate-300 hover:text-blue-500">
+                          <Pencil size={13}/>
+                        </button>
+                        <button onClick={() => deleteSub(`/services/${i}`, 'Service removed')} className="p-1 text-slate-300 hover:text-red-500">
+                          <X size={13}/>
+                        </button>
+                      </div>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
@@ -576,9 +625,14 @@ export default function Clients() {
                           {p.notes && <p className="text-xs text-slate-400 mt-0.5">{p.notes}</p>}
                         </div>
                       </div>
-                      <button onClick={() => deleteSub(`/payments/${i}`, 'Payment removed')} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                        <X size={13}/>
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => { setPaymentForm(p); setEditingIdx(i); setShowAddPayment(true); }} className="p-1.5 text-slate-300 hover:text-blue-500">
+                          <Pencil size={13}/>
+                        </button>
+                        <button onClick={() => deleteSub(`/payments/${i}`, 'Payment removed')} className="p-1.5 text-slate-300 hover:text-red-500">
+                          <X size={13}/>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -599,9 +653,14 @@ export default function Clients() {
                 <div className="space-y-4">
                   {selected.meetingNotes.map((m: any, i: number) => (
                     <div key={i} className="border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors relative group">
-                      <button onClick={() => deleteSub(`/meetings/${i}`, 'Meeting note removed')} className="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                        <X size={13}/>
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => { setMeetingForm(m); setEditingIdx(i); setShowAddMeeting(true); }} className="p-1 text-slate-300 hover:text-blue-500">
+                          <Pencil size={13}/>
+                        </button>
+                        <button onClick={() => deleteSub(`/meetings/${i}`, 'Meeting note removed')} className="p-1 text-slate-300 hover:text-red-500">
+                          <X size={13}/>
+                        </button>
+                      </div>
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h4 className="font-bold text-slate-900">{m.title}</h4>
                         <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap flex items-center gap-1 flex-shrink-0 mt-0.5">
@@ -656,6 +715,9 @@ export default function Clients() {
                         <a href={d.url} download className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Download">
                           <Download size={14}/>
                         </a>
+                        <button onClick={() => { setDocForm({ name: d.name, type: d.type, url: d.url, notes: d.notes }); setEditingIdx(i); setShowAddDoc(true); }} className="p-1.5 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all">
+                          <Pencil size={13}/>
+                        </button>
                         <button onClick={() => deleteSub(`/documents/${i}`, 'Document removed')} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
                           <X size={13}/>
                         </button>

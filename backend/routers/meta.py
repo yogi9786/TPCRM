@@ -180,6 +180,10 @@ async def receive_webhook(request: Request):
                 }
                 db.collection("meta_messages").add(msg_doc)
                 messages_processed += 1
+                
+                # Ensure sender is in Leads
+                if direction == "inbound" and sender_id:
+                    _ensure_lead_for_sender(db, sender_id, msg_doc["source"])
 
             # Postbacks (button clicks)
             elif "postback" in messaging_event:
@@ -545,6 +549,10 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
                 new_messages += 1
             except Exception:
                 pass
+                
+        # Ensure sender is in Leads
+        if sender_id and sender_id != "unknown":
+            _ensure_lead_for_sender(db, sender_id, "facebook", sender.get("name", ""))
 
     return {
         "status": "success",
@@ -679,3 +687,29 @@ def _build_notes(field_data: dict, meta_data: dict) -> str:
     if meta_data.get("formId"):
         lines.append(f"Form ID: {meta_data['formId']}")
     return "\n".join(lines) if lines else f"Imported from Meta Ads"
+
+def _ensure_lead_for_sender(db, sender_id: str, source: str, sender_name: str = ""):
+    """Check if a lead exists with this metaSenderId, and create one if not."""
+    try:
+        existing = list(db.collection("leads").where("metaSenderId", "==", sender_id).limit(1).stream())
+        if not existing:
+            now = datetime.utcnow().isoformat()
+            lead_source = "Instagram Ads" if "instagram" in source.lower() else "Facebook Ads"
+            lead_doc = {
+                "fullName": sender_name or "Meta Messenger User",
+                "email": "",
+                "phone": "",
+                "companyName": "",
+                "leadSource": lead_source,
+                "serviceInterested": "Messenger Chat",
+                "status": "New",
+                "notes": "Auto-created from Meta Messenger conversation.",
+                "metaSenderId": sender_id,
+                "tags": ["meta", "messenger"],
+                "userId": "auto_imported",
+                "createdAt": now,
+                "updatedAt": now,
+            }
+            db.collection("leads").add(lead_doc)
+    except Exception as e:
+        print(f"Error ensuring lead for sender: {e}")

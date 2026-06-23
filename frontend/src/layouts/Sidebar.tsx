@@ -64,7 +64,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         'flex flex-col h-full transition-all duration-300 ease-out overflow-hidden relative',
         collapsed ? 'w-[72px]' : 'w-[256px]'
       )}
-      style={{ background: 'linear-gradient(180deg, #100F88 0%, #0c0b6e 60%, #080756 100%)' }}
+      style={{ background: 'linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%)' }}
     >
       {/* Decorative dot grid */}
       <div
@@ -93,11 +93,11 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           <div
             className="flex-shrink-0 flex items-center justify-center rounded-xl w-10 h-10"
             style={{
-              background: 'linear-gradient(135deg, #FFC263, #f0a832)',
-              boxShadow: '0 4px 12px rgba(255,194,99,0.45)',
+              background: 'linear-gradient(135deg, var(--gold), var(--gold-dark))',
+              boxShadow: '0 4px 12px rgba(255,183,3,0.45)',
             }}
           >
-            <Zap size={20} color="#100F88" strokeWidth={2.5} />
+            <Zap size={20} color="var(--navy-dark)" strokeWidth={2.5} />
           </div>
         ) : (
           /* Expanded: show full logo image */
@@ -117,13 +117,13 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             <div className="hidden items-center gap-2.5">
               <div
                 className="flex-shrink-0 flex items-center justify-center rounded-xl w-9 h-9"
-                style={{ background: 'linear-gradient(135deg, #FFC263, #f0a832)', boxShadow: '0 4px 12px rgba(255,194,99,0.45)' }}
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--gold-dark))', boxShadow: '0 4px 12px rgba(255,183,3,0.45)' }}
               >
-                <Zap size={18} color="#100F88" strokeWidth={2.5} />
+                <Zap size={18} color="var(--navy-dark)" strokeWidth={2.5} />
               </div>
               <div>
                 <p className="font-black text-white text-sm leading-none tracking-tight">TekhPortal</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#FFC263' }}>CRM Suite</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: 'var(--gold)' }}>CRM Suite</p>
               </div>
             </div>
           </div>
@@ -158,9 +158,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                       : 'hover:bg-white/8'
                   )}
                   style={({ isActive }) => isActive ? {
-                    background: 'linear-gradient(135deg, rgba(255,194,99,0.22) 0%, rgba(255,194,99,0.08) 100%)',
-                    border: '1px solid rgba(255,194,99,0.30)',
-                    color: '#FFC263',
+                    background: 'linear-gradient(135deg, rgba(255,183,3,0.22) 0%, rgba(255,183,3,0.08) 100%)',
+                    border: '1px solid rgba(255,183,3,0.30)',
+                    color: 'var(--gold)',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
                   } : {
                     color: 'rgba(255,255,255,0.60)',
@@ -172,12 +172,12 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                       <Icon
                         size={17}
                         className="flex-shrink-0 transition-all duration-150"
-                        style={{ color: isActive ? '#FFC263' : 'rgba(255,255,255,0.55)' }}
+                        style={{ color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.55)' }}
                       />
                       {!collapsed && (
                         <span
                           className="truncate leading-none font-semibold"
-                          style={{ color: isActive ? '#FFC263' : 'rgba(255,255,255,0.75)' }}
+                          style={{ color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.75)' }}
                         >
                           {label}
                         </span>
@@ -186,14 +186,14 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                       {isActive && !collapsed && (
                         <span
                           className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
-                          style={{ background: '#FFC263' }}
+                          style={{ background: 'var(--gold)' }}
                         />
                       )}
                       {/* Collapsed active dot */}
                       {collapsed && isActive && (
                         <span
                           className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full"
-                          style={{ background: '#FFC263' }}
+                          style={{ background: 'var(--gold)' }}
                         />
                       )}
                     </>
@@ -219,9 +219,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             collapsed && 'justify-center'
           )}
           style={({ isActive }) => isActive ? {
-            background: 'linear-gradient(135deg, rgba(255,194,99,0.22), rgba(255,194,99,0.08))',
-            border: '1px solid rgba(255,194,99,0.30)',
-            color: '#FFC263',
+            background: 'linear-gradient(135deg, rgba(255,183,3,0.22), rgba(255,183,3,0.08))',
+            border: '1px solid rgba(255,183,3,0.30)',
+            color: 'var(--gold)',
           } : {
             color: 'rgba(255,255,255,0.60)',
             border: '1px solid transparent',
@@ -229,9 +229,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         >
           {({ isActive }) => (
             <>
-              <Settings size={17} style={{ color: isActive ? '#FFC263' : 'rgba(255,255,255,0.55)' }} />
+              <Settings size={17} style={{ color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.55)' }} />
               {!collapsed && (
-                <span style={{ color: isActive ? '#FFC263' : 'rgba(255,255,255,0.75)' }}>Settings</span>
+                <span style={{ color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.75)' }}>Settings</span>
               )}
             </>
           )}
@@ -253,9 +253,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           <div
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black select-none"
             style={{
-              background: 'linear-gradient(135deg, #FFC263, #f0a832)',
-              color: '#100F88',
-              boxShadow: '0 2px 8px rgba(255,194,99,0.40)',
+              background: 'linear-gradient(135deg, var(--gold), var(--gold-dark))',
+              color: 'var(--navy-dark)',
+              boxShadow: '0 2px 8px rgba(255,183,3,0.40)',
             }}
           >
             {avatarLetter}
@@ -326,7 +326,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
             className="absolute inset-0 backdrop-blur-sm"
-            style={{ background: 'rgba(16,15,136,0.55)' }}
+            style={{ background: 'rgba(30,18,168,0.55)' }}
             onClick={onMobileClose}
           />
           <div className="relative z-10 w-[256px] h-full shadow-2xl animate-slide-up">

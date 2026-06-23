@@ -71,7 +71,10 @@ export default function CRM() {
   // ── Fetch Leads ──────────────────────────────────────────────
   useEffect(() => {
     if (!currentUser) return
-    const q = query(collection(db, 'leads'), where('userId', '==', currentUser.uid))
+    const q = query(
+      collection(db, 'leads'),
+      where('userId', 'in', [currentUser.uid, 'auto_imported'])
+    )
     const unsub = onSnapshot(q, snap => {
       setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
       setLoading(false)
@@ -289,7 +292,10 @@ export default function CRM() {
 
   useEffect(() => {
     if (!currentUser) return
-    const q = query(collection(db, 'leads'), where('userId', '==', currentUser.uid))
+    const q = query(
+      collection(db, 'leads'),
+      where('userId', 'in', [currentUser.uid, 'auto_imported'])
+    )
     const unsub = onSnapshot(q, snap => {
       setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
       setLoading(false)
