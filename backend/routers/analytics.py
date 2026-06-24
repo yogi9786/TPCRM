@@ -24,7 +24,7 @@ async def get_dashboard_analytics(user: dict = Depends(get_current_user)):
     # 3. Fetch messages (to count them)
     # The frontend just wants some numbers. We'll count all messages we can find.
     msgs_ref = db.collection("meta_messages").where("userId", "==", uid).stream()
-    messages_count = sum(1 for _ in msgs_ref)
+    sum(1 for _ in msgs_ref)
 
     # --- Metrics ---
     total_revenue = sum(c.get("totalPaid", 0) for c in clients)

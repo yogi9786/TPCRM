@@ -25,6 +25,7 @@ interface MetaLead {
   fieldData?: Record<string, string>
   importedToCRM?: boolean
   crmLeadId?: string
+  isManualCRM?: boolean
   createdAt?: string
   metaCreatedTime?: string
 }
@@ -529,6 +530,9 @@ export default function MetaPage() {
                               ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">✓ In CRM</span>
                               : <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Pending</span>
                             }
+                            {lead.isManualCRM && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 flex items-center gap-1"><User size={10} /> CRM Added</span>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 flex-wrap">
                             {fd.email && <span className="flex items-center gap-1"><Mail size={10} />{fd.email}</span>}

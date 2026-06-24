@@ -5,7 +5,7 @@ Supports: WhatsApp broadcasts, Meta retargeting, scheduling, per-campaign analyt
 from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
-from models.campaign import CampaignCreate, CampaignUpdate, BroadcastRequest
+from models.campaign import CampaignCreate, CampaignUpdate
 from services.firebase_service import get_db
 from services.twilio_service import send_bulk_messages
 from services.email_service import send_email

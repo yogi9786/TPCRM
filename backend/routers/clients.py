@@ -3,7 +3,7 @@ Clients router — Full client lifecycle management for agency use
 Supports: Client profiles, contacts, services, payments, documents, meeting notes
 """
 from fastapi_cache.decorator import cache
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
@@ -186,7 +186,7 @@ async def get_client(client_id: str, user: dict = Depends(get_current_user)):
 async def update_client(client_id: str, update: ClientUpdate, user: dict = Depends(get_current_user)):
     """Update client profile fields."""
     db = get_db()
-    doc = _get_client_or_404(db, client_id, user["uid"])
+    _get_client_or_404(db, client_id, user["uid"])
     data = {k: v for k, v in update.model_dump().items() if v is not None}
     data["updatedAt"] = datetime.utcnow().isoformat()
     db.collection("clients").document(client_id).update(data)

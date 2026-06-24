@@ -3,7 +3,7 @@ Email router — send, history, logs via Brevo
 """
 from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from services.firebase_service import get_db

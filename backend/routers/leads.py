@@ -5,7 +5,7 @@ Includes: activities, notes, WhatsApp message history, Meta form data
 from fastapi_cache.decorator import cache
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
-from models.lead import LeadCreate, LeadUpdate, LeadResponse
+from models.lead import LeadCreate, LeadUpdate
 from services.firebase_service import get_db
 from auth import get_current_user
 from typing import Optional
@@ -191,17 +191,43 @@ async def create_lead(lead: LeadCreate, user: dict = Depends(get_current_user)):
         "updatedAt": now,
     }
     doc_ref = db.collection("leads").add(lead_data)
+    lead_id = doc_ref[1].id
+
+    # Sync to meta_leads if source is Facebook/Instagram Ads
+    if lead.leadSource in ("Facebook Ads", "Instagram Ads", "Meta Ads"):
+        meta_doc = {
+            "leadgenId": f"crm_manual_{lead_id}",
+            "formId": "CRM Manual Entry",
+            "formName": "CRM Manual Entry",
+            "adId": "",
+            "adName": "",
+            "campaignId": "",
+            "campaignName": "",
+            "fieldData": {
+                "full_name": lead.fullName,
+                "email": lead.email or "",
+                "phone_number": lead.phone or ""
+            },
+            "source": lead.leadSource,
+            "importedToCRM": True,
+            "crmLeadId": lead_id,
+            "isManualCRM": True,
+            "createdAt": now,
+            "metaCreatedTime": now,
+        }
+        meta_ref = db.collection("meta_leads").add(meta_doc)
+        db.collection("leads").document(lead_id).update({"metaLeadId": meta_ref[1].id})
 
     # Log creation activity
     db.collection("lead_activities").add({
-        "leadId": doc_ref[1].id,
+        "leadId": lead_id,
         "type": "created",
         "title": "Lead created",
         "description": f"Lead '{lead.fullName}' created manually",
         "createdAt": now,
     })
 
-    return {"id": doc_ref[1].id, **lead_data}
+    return {"id": lead_id, **lead_data}
 
 
 @router.put("/{lead_id}", response_model=dict)
@@ -216,7 +242,34 @@ async def update_lead(lead_id: str, update: LeadUpdate, user: dict = Depends(get
         raise HTTPException(status_code=403, detail="Forbidden")
 
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
-    update_data["updatedAt"] = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat()
+    update_data["updatedAt"] = now
+
+    new_source = update_data.get("leadSource")
+    if new_source in ("Facebook Ads", "Instagram Ads", "Meta Ads") and not doc.to_dict().get("metaLeadId"):
+        meta_doc = {
+            "leadgenId": f"crm_manual_{lead_id}",
+            "formId": "CRM Manual Entry",
+            "formName": "CRM Manual Entry",
+            "adId": "",
+            "adName": "",
+            "campaignId": "",
+            "campaignName": "",
+            "fieldData": {
+                "full_name": update_data.get("fullName", doc.to_dict().get("fullName", "")),
+                "email": update_data.get("email", doc.to_dict().get("email", "")),
+                "phone_number": update_data.get("phone", doc.to_dict().get("phone", ""))
+            },
+            "source": new_source,
+            "importedToCRM": True,
+            "crmLeadId": lead_id,
+            "isManualCRM": True,
+            "createdAt": now,
+            "metaCreatedTime": now,
+        }
+        meta_ref = db.collection("meta_leads").add(meta_doc)
+        update_data["metaLeadId"] = meta_ref[1].id
+
     lead_ref.update(update_data)
     return {"id": lead_id, **doc.to_dict(), **update_data}
 

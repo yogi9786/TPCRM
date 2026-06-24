@@ -1,56 +1,96 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import MainLayout from '../layouts/MainLayout'
 import PageHeader from '../components/PageHeader'
-import { Settings as SettingsIcon, Save, Key, Bell, Shield, Webhook, Eye, EyeOff, Mail } from 'lucide-react'
+import { Settings as SettingsIcon, Save, Building, Sliders, Bell, Plug, CheckCircle, XCircle, Plus, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
 export default function Settings() {
-  const [tab, setTab] = useState<'api' | 'notifications' | 'security'>('api')
-  const [showTwilioSid, setShowTwilioSid] = useState(false)
-  const [showTwilioToken, setShowTwilioToken] = useState(false)
-  const [showMetaToken, setShowMetaToken] = useState(false)
-  const [showBrevoKey, setShowBrevoKey] = useState(false)
+  const [tab, setTab] = useState<'profile' | 'crm_preferences' | 'integrations' | 'notifications'>('profile')
   const [saving, setSaving] = useState(false)
 
-  const [apiConfig, setApiConfig] = useState({
-    twilioAccountSid: '',
-    twilioAuthToken: '',
-    twilioWhatsAppNumber: 'whatsapp:+14155238886',
-    metaPageAccessToken: '',
-    metaPageId: '',
-    brevoApiKey: '',
-    brevoSenderEmail: 'noreply@tekhportal.com',
-    backendUrl: 'https://tpcrm.onrender.com',
+  // Profile State
+  const [profile, setProfile] = useState({
+    companyName: 'TekhPortal',
+    adminEmail: 'admin@tekhportal.com',
+    timezone: 'Asia/Kolkata'
   })
 
+  // CRM Preferences State
+  const [leadStatuses, setLeadStatuses] = useState(['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Won', 'Lost'])
+  const [newStatus, setNewStatus] = useState('')
+
+  const [leadSources, setLeadSources] = useState(['Facebook Ads', 'Instagram Ads', 'Google Ads', 'Organic', 'Referral'])
+  const [newSource, setNewSource] = useState('')
+
+  const [tags, setTags] = useState(['VIP', 'Urgent', 'Follow-up Needed', 'High Value'])
+  const [newTag, setNewTag] = useState('')
+
+  // Notifications State
   const [notifConfig, setNotifConfig] = useState({
     newLeadAlert: true,
     whatsappInbound: true,
     campaignComplete: true,
     dailyDigest: false,
-    emailAlerts: '',
+    emailAlerts: 'admin@tekhportal.com',
   })
+
+  // Load from local storage on mount
+  useEffect(() => {
+    const savedPrefs = localStorage.getItem('crmSettings')
+    if (savedPrefs) {
+      const parsed = JSON.parse(savedPrefs)
+      if (parsed.profile) setProfile(parsed.profile)
+      if (parsed.leadStatuses) setLeadStatuses(parsed.leadStatuses)
+      if (parsed.leadSources) setLeadSources(parsed.leadSources)
+      if (parsed.tags) setTags(parsed.tags)
+      if (parsed.notifConfig) setNotifConfig(parsed.notifConfig)
+    }
+  }, [])
 
   async function saveSettings() {
     setSaving(true)
     await new Promise(r => setTimeout(r, 800))
+    
+    // Save to local storage
+    localStorage.setItem('crmSettings', JSON.stringify({
+      profile,
+      leadStatuses,
+      leadSources,
+      tags,
+      notifConfig
+    }))
+
     setSaving(false)
-    toast.success('Settings saved!')
+    toast.success('CRM Settings saved successfully!')
   }
 
   const tabs = [
-    { id: 'api', label: 'API Keys', icon: Key },
+    { id: 'profile', label: 'General Profile', icon: Building },
+    { id: 'crm_preferences', label: 'CRM Preferences', icon: Sliders },
+    { id: 'integrations', label: 'Integrations', icon: Plug },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Security', icon: Shield },
   ]
+
+  const addItem = (list: string[], setList: (val: string[]) => void, item: string, setItem: (val: string) => void) => {
+    if (item.trim() && !list.includes(item.trim())) {
+      setList([...list, item.trim()])
+      setItem('')
+    }
+  }
+
+  const removeItem = (list: string[], setList: (val: string[]) => void, index: number) => {
+    const newList = [...list]
+    newList.splice(index, 1)
+    setList(newList)
+  }
 
   return (
     <MainLayout>
       <div className="space-y-5 animate-fade-in">
         <PageHeader
-          title="Settings"
-          subtitle="Configure API integrations, notifications & security"
+          title="CRM Settings"
+          subtitle="Configure your CRM preferences, fields, and organization details"
           icon={<SettingsIcon size={20} />}
           badge="Configuration"
           actions={
@@ -91,232 +131,275 @@ export default function Settings() {
 
           {/* Content */}
           <div className="glass-card p-6 space-y-6">
-            {/* API Keys Tab */}
-            {tab === 'api' && (
-              <>
+            
+            {/* General Profile Tab */}
+            {tab === 'profile' && (
+              <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
-                    <Key size={15} className="text-yellow-400" /> Twilio (WhatsApp)
+                  <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <Building size={18} className="text-indigo-500" /> Organization Profile
                   </h2>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Get these from your{' '}
-                    <a href="https://console.twilio.com" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
-                      Twilio Console
-                    </a>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Manage your company details and global CRM defaults.
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
                     <div>
-                      <label className="label">Account SID</label>
-                      <div className="relative">
-                        <input
-                          type={showTwilioSid ? 'text' : 'password'}
-                          className="input-field pr-10"
-                          placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                          value={apiConfig.twilioAccountSid}
-                          onChange={e => setApiConfig(c => ({ ...c, twilioAccountSid: e.target.value }))}
-                        />
-                        <button onClick={() => setShowTwilioSid(!showTwilioSid)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
-                          {showTwilioSid ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="label">Auth Token</label>
-                      <div className="relative">
-                        <input
-                          type={showTwilioToken ? 'text' : 'password'}
-                          className="input-field pr-10"
-                          placeholder="Your auth token"
-                          value={apiConfig.twilioAuthToken}
-                          onChange={e => setApiConfig(c => ({ ...c, twilioAuthToken: e.target.value }))}
-                        />
-                        <button onClick={() => setShowTwilioToken(!showTwilioToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
-                          {showTwilioToken ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="label">WhatsApp Number</label>
+                      <label className="label">Company Name</label>
                       <input
+                        type="text"
                         className="input-field"
-                        placeholder="whatsapp:+14155238886"
-                        value={apiConfig.twilioWhatsAppNumber}
-                        onChange={e => setApiConfig(c => ({ ...c, twilioWhatsAppNumber: e.target.value }))}
+                        value={profile.companyName}
+                        onChange={(e) => setProfile({...profile, companyName: e.target.value})}
                       />
                     </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 pt-5">
-                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
-                    <Webhook size={15} className="text-blue-400" /> Meta (Facebook / Instagram)
-                  </h2>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Get these from your{' '}
-                    <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
-                      Meta Developer Console
-                    </a>
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="label">Page Access Token</label>
-                      <div className="relative">
-                        <input
-                          type={showMetaToken ? 'text' : 'password'}
-                          className="input-field pr-10"
-                          placeholder="EAAxxxxxxxx..."
-                          value={apiConfig.metaPageAccessToken}
-                          onChange={e => setApiConfig(c => ({ ...c, metaPageAccessToken: e.target.value }))}
-                        />
-                        <button onClick={() => setShowMetaToken(!showMetaToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
-                          {showMetaToken ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="label">Page ID</label>
-                      <input
-                        className="input-field"
-                        placeholder="123456789012345"
-                        value={apiConfig.metaPageId}
-                        onChange={e => setApiConfig(c => ({ ...c, metaPageId: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 pt-5">
-                  <h2 className="text-base font-semibold text-slate-900 mb-1 flex items-center gap-2">
-                    <Mail size={15} className="text-orange-400" /> Brevo (Email)
-                  </h2>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Get your API key from{' '}
-                    <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
-                      Brevo API Keys
-                    </a>
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="label">API Key</label>
-                      <div className="relative">
-                        <input
-                          type={showBrevoKey ? 'text' : 'password'}
-                          className="input-field pr-10"
-                          placeholder="xkeysib-xxxxxxxx..."
-                          value={apiConfig.brevoApiKey}
-                          onChange={e => setApiConfig(c => ({ ...c, brevoApiKey: e.target.value }))}
-                        />
-                        <button onClick={() => setShowBrevoKey(!showBrevoKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
-                          {showBrevoKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="label">Sender Email</label>
+                      <label className="label">Admin Email</label>
                       <input
                         type="email"
                         className="input-field"
-                        placeholder="noreply@yourdomain.com"
-                        value={apiConfig.brevoSenderEmail}
-                        onChange={e => setApiConfig(c => ({ ...c, brevoSenderEmail: e.target.value }))}
+                        value={profile.adminEmail}
+                        onChange={(e) => setProfile({...profile, adminEmail: e.target.value})}
                       />
                     </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 pt-5">
-                  <label className="label">Backend API URL</label>
-                  <input
-                    className="input-field max-w-sm"
-                    value={apiConfig.backendUrl}
-                    onChange={e => setApiConfig(c => ({ ...c, backendUrl: e.target.value }))}
-                  />
-                  <p className="text-xs text-slate-600 mt-1.5">URL of your Node.js backend server</p>
-                </div>
-              </>
-            )}
-
-            {/* Notifications Tab */}
-            {tab === 'notifications' && (
-              <div className="space-y-5">
-                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                  <Bell size={15} className="text-amber-400" /> Notification Preferences
-                </h2>
-                {[
-                  { key: 'newLeadAlert', label: 'New Lead Alert', desc: 'Notify when a new lead is added to CRM' },
-                  { key: 'whatsappInbound', label: 'WhatsApp Inbound', desc: 'Alert on new incoming WhatsApp message' },
-                  { key: 'campaignComplete', label: 'Campaign Complete', desc: 'Notify when a broadcast campaign finishes' },
-                  { key: 'dailyDigest', label: 'Daily Digest', desc: 'Email summary of daily CRM activity' },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{label}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                      <label className="label">Default Timezone</label>
+                      <select 
+                        className="input-field bg-white"
+                        value={profile.timezone}
+                        onChange={(e) => setProfile({...profile, timezone: e.target.value})}
+                      >
+                        <option value="Asia/Kolkata">India Standard Time (IST)</option>
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">Eastern Time (ET)</option>
+                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                      </select>
                     </div>
-                    <button
-                      onClick={() => setNotifConfig(c => ({ ...c, [key]: !c[key as keyof typeof c] }))}
-                      className={clsx(
-                        'relative w-11 h-6 rounded-full transition-colors duration-200',
-                        (notifConfig as any)[key] ? 'bg-sky-500' : 'bg-slate-700'
-                      )}
-                    >
-                      <div className={clsx(
-                        'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200',
-                        (notifConfig as any)[key] ? 'translate-x-6' : 'translate-x-1'
-                      )} />
-                    </button>
                   </div>
-                ))}
-                <div>
-                  <label className="label">Alert Email</label>
-                  <input
-                    className="input-field max-w-sm"
-                    type="email"
-                    placeholder="admin@tekhportal.com"
-                    value={notifConfig.emailAlerts}
-                    onChange={e => setNotifConfig(c => ({ ...c, emailAlerts: e.target.value }))}
-                  />
                 </div>
               </div>
             )}
 
-            {/* Security Tab */}
-            {tab === 'security' && (
-              <div className="space-y-5">
-                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                  <Shield size={15} className="text-emerald-400" /> Security Settings
+            {/* CRM Preferences Tab */}
+            {tab === 'crm_preferences' && (
+              <div className="space-y-8 animate-fade-in">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <Sliders size={18} className="text-fuchsia-500" /> CRM Preferences
+                  </h2>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Customize the dropdown options and tags available when adding or editing leads and clients.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Lead Statuses */}
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                      <h3 className="font-semibold text-slate-800 mb-3 text-sm uppercase tracking-wider">Lead Statuses</h3>
+                      <div className="space-y-2 mb-4">
+                        {leadStatuses.map((status, index) => (
+                          <div key={index} className="flex justify-between items-center bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm">
+                            <span className="font-medium text-slate-700">{status}</span>
+                            <button onClick={() => removeItem(leadStatuses, setLeadStatuses, index)} className="text-slate-400 hover:text-red-500 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Add new status..." 
+                          className="input-field py-1.5 text-sm"
+                          value={newStatus}
+                          onChange={(e) => setNewStatus(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addItem(leadStatuses, setLeadStatuses, newStatus, setNewStatus)}
+                        />
+                        <button onClick={() => addItem(leadStatuses, setLeadStatuses, newStatus, setNewStatus)} className="btn-primary py-1.5 px-3">
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lead Sources */}
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                      <h3 className="font-semibold text-slate-800 mb-3 text-sm uppercase tracking-wider">Lead Sources</h3>
+                      <div className="space-y-2 mb-4">
+                        {leadSources.map((source, index) => (
+                          <div key={index} className="flex justify-between items-center bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm">
+                            <span className="font-medium text-slate-700">{source}</span>
+                            <button onClick={() => removeItem(leadSources, setLeadSources, index)} className="text-slate-400 hover:text-red-500 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Add new source..." 
+                          className="input-field py-1.5 text-sm"
+                          value={newSource}
+                          onChange={(e) => setNewSource(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addItem(leadSources, setLeadSources, newSource, setNewSource)}
+                        />
+                        <button onClick={() => addItem(leadSources, setLeadSources, newSource, setNewSource)} className="btn-primary py-1.5 px-3">
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Global Tags */}
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm lg:col-span-2">
+                      <h3 className="font-semibold text-slate-800 mb-3 text-sm uppercase tracking-wider">Global Tags</h3>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {tags.map((tag, index) => (
+                          <div key={index} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                            <span>{tag}</span>
+                            <button onClick={() => removeItem(tags, setTags, index)} className="text-indigo-400 hover:text-indigo-600 transition-colors bg-indigo-100 rounded-full p-0.5">
+                              <XCircle size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 max-w-sm">
+                        <input 
+                          type="text" 
+                          placeholder="Add new tag..." 
+                          className="input-field py-1.5 text-sm"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addItem(tags, setTags, newTag, setNewTag)}
+                        />
+                        <button onClick={() => addItem(tags, setTags, newTag, setNewTag)} className="btn-primary py-1.5 px-3">
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Integrations Tab */}
+            {tab === 'integrations' && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <Plug size={18} className="text-teal-500" /> Connected Integrations
+                  </h2>
+                  <p className="text-sm text-slate-500 mb-6">
+                    View the status of your 3rd party connections. API Keys are securely managed via the backend `.env` file.
+                  </p>
+                  
+                  <div className="space-y-4 max-w-3xl">
+                    <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                          M
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">Meta (Facebook & Instagram)</h4>
+                          <p className="text-xs text-slate-500">Used for Lead Ads integration and Meta Campaigns.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-sm font-medium">
+                        <CheckCircle size={14} /> Connected
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-xl">
+                          W
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">Twilio (WhatsApp)</h4>
+                          <p className="text-xs text-slate-500">Used for automated WhatsApp messaging and broadcasts.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-sm font-medium">
+                        <CheckCircle size={14} /> Connected
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xl">
+                          B
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">Brevo</h4>
+                          <p className="text-xs text-slate-500">Used for transactional emails and email blasts.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-sm font-medium">
+                        <CheckCircle size={14} /> Connected
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notifications Tab */}
+            {tab === 'notifications' && (
+              <div className="space-y-6 animate-fade-in">
+                <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Bell size={18} className="text-amber-400" /> Notification Preferences
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-3 max-w-2xl">
                   {[
-                    { label: 'Firebase Auth', status: 'Connected', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'Firestore Rules', status: 'Active', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'HTTPS/TLS', status: 'Enabled', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'Webhook Signature Validation', status: 'Enabled', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                  ].map(({ label, status, color, bg }) => (
-                    <div key={label} className={`flex items-center justify-between p-4 rounded-xl border ${bg}`}>
-                      <p className="text-sm text-slate-900">{label}</p>
-                      <span className={`text-xs font-semibold ${color}`}>{status}</span>
+                    { key: 'newLeadAlert', label: 'New Lead Alert', desc: 'Notify when a new lead is added to CRM' },
+                    { key: 'whatsappInbound', label: 'WhatsApp Inbound', desc: 'Alert on new incoming WhatsApp message' },
+                    { key: 'campaignComplete', label: 'Campaign Complete', desc: 'Notify when a broadcast campaign finishes' },
+                    { key: 'dailyDigest', label: 'Daily Digest', desc: 'Email summary of daily CRM activity' },
+                  ].map(({ key, label, desc }) => (
+                    <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">{label}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                      </div>
+                      <button
+                        onClick={() => setNotifConfig(c => ({ ...c, [key]: !c[key as keyof typeof c] }))}
+                        className={clsx(
+                          'relative w-11 h-6 rounded-full transition-colors duration-200',
+                          (notifConfig as any)[key] ? 'bg-indigo-600' : 'bg-slate-300'
+                        )}
+                      >
+                        <div className={clsx(
+                          'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200',
+                          (notifConfig as any)[key] ? 'translate-x-6' : 'translate-x-1'
+                        )} />
+                      </button>
                     </div>
                   ))}
-                </div>
-                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5">
-                  <p className="text-xs text-amber-300">
-                    💡 All API keys are stored securely in your backend environment variables (.env file) and never exposed to the frontend.
-                  </p>
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <label className="label">Alert Email Address</label>
+                    <input
+                      className="input-field max-w-sm"
+                      type="email"
+                      placeholder="admin@tekhportal.com"
+                      value={notifConfig.emailAlerts}
+                      onChange={e => setNotifConfig(c => ({ ...c, emailAlerts: e.target.value }))}
+                    />
+                    <p className="text-xs text-slate-500 mt-2">All notifications will be sent to this email address.</p>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Save Button */}
-            <div className="pt-4 border-t" style={{ borderColor: '#e4e4f0' }}>
+            <div className="pt-4 border-t mt-8" style={{ borderColor: '#e4e4f0' }}>
               <button onClick={saveSettings} disabled={saving} className="btn-primary">
                 {saving ? (
                   <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Saving...</>
                 ) : (
-                  <><Save size={15} /> Save Settings</>
+                  <><Save size={15} /> Save All CRM Settings</>
                 )}
               </button>
             </div>
+
           </div>
         </div>
       </div>

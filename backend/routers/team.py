@@ -265,7 +265,7 @@ async def create_team_member(member: TeamMemberCreate, user: dict = Depends(get_
                 html_content=html,
                 text_content=f"Welcome {member.name}! Your TekhPortal CRM credentials: Email: {member.email}, Username: {member.username}, Password: {member.password}. Please login at {os.getenv('FRONTEND_URL', 'https://tpcrm.netlify.app')}/login"
             )
-        except Exception as e:
+        except Exception:
             pass  # Don't fail creation if email fails
 
     return {"success": True, "id": member_id, "message": f"Team member {member.name} added successfully."}

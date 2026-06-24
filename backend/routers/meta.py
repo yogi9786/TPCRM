@@ -493,7 +493,7 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
         if isinstance(err, dict):
             code = err.get("code", "")
             msg = err.get("message", str(err))
-            err_type = err.get("type", "")
+            err.get("type", "")
             # Friendly messages for common errors
             if code == 190:
                 if "page access token" in msg.lower():
@@ -512,7 +512,6 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             "status": "error",
             "new_messages_synced": 0,
             "reason": friendly,
-            "meta_error": err,
             "meta_error": err,
         }
 
@@ -739,7 +738,7 @@ def _build_notes(field_data: dict, meta_data: dict) -> str:
         lines.append(f"Ad: {meta_data['adName']}")
     if meta_data.get("formId"):
         lines.append(f"Form ID: {meta_data['formId']}")
-    return "\n".join(lines) if lines else f"Imported from Meta Ads"
+    return "\n".join(lines) if lines else "Imported from Meta Ads"
 
 def _ensure_lead_for_sender(db, sender_id: str, source: str, sender_name: str = ""):
     """Check if a lead exists with this metaSenderId, and create one if not."""

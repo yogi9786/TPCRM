@@ -36,7 +36,7 @@ async def send_message(req: SendMessageRequest, user: dict = Depends(get_current
     }
     try:
         db.collection("messages").add(msg_data)
-    except Exception as db_err:
+    except Exception:
         pass
 
     if not result["success"]:

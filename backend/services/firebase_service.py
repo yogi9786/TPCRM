@@ -142,7 +142,7 @@ class MockFirestoreClient:
         try:
             with open(path, "w") as f:
                 json.dump(self.data, f, indent=2, default=str)
-        except Exception as e:
+        except Exception:
             pass
 
     def collection(self, name):
@@ -191,7 +191,7 @@ def _init_firebase_app():
             })
             pass
             return True
-        except Exception as e:
+        except Exception:
             pass
 
     
@@ -205,7 +205,7 @@ def _init_firebase_app():
             })
             pass
             return True
-        except Exception as e:
+        except Exception:
             pass
 
     
@@ -232,7 +232,7 @@ def get_db():
     try:
         get_firebase_app()
         return firestore.client()
-    except Exception as e:
+    except Exception:
         if not _use_mock:
             pass
             _use_mock = True
