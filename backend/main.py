@@ -10,30 +10,14 @@ from config import ALLOWED_ORIGINS
 from routers import leads, whatsapp, meta, campaigns, email as email_router, content_plans, deals, tasks, automations, documents, team, clients, analytics
 from auth import router as auth_router, get_current_user
 
-import os
 from contextlib import asynccontextmanager
 from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.backends.inmemory import InMemoryBackend
-from redis import asyncio as aioredis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
-    redis_url = os.getenv("REDIS_URL", "")
-    if not redis_url or "localhost" in redis_url and os.getenv("RENDER"):
-        # On Render, localhost redis won't work. Fallback silently.
-        FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
-        print("✅ InMemory cache initialized (No external Redis configured)")
-    else:
-        try:
-            redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
-            # Test connection
-            await redis.ping()
-            FastAPICache.init(RedisBackend(redis), prefix="tekhportal-cache")
-            print("✅ Redis cache initialized")
-        except Exception as e:
-            print(f"⚠️ Failed to connect to Redis. Falling back to InMemoryBackend. Error: {e}")
-            FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
+    FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
+    print("✅ InMemory cache initialized")
     yield
 
 app = FastAPI(
