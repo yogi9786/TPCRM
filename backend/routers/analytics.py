@@ -17,25 +17,28 @@ async def get_dashboard_analytics(user: dict = Depends(get_current_user)):
     leads_ref = db.collection("leads").where("userId", "==", uid).stream()
     leads = [d.to_dict() for d in leads_ref]
 
-    # 2. Fetch clients
-    clients_ref = db.collection("clients").where("userId", "==", uid).stream()
-    clients = [d.to_dict() for d in clients_ref]
+    # 2. Fetch campaigns (instead of clients)
+    campaigns_ref = db.collection("campaigns").where("userId", "==", uid).stream()
+    campaigns = [d.to_dict() for d in campaigns_ref]
 
     # 3. Fetch messages (to count them)
     # The frontend just wants some numbers. We'll count all messages we can find.
-    msgs_ref = db.collection("meta_messages").where("userId", "==", uid).stream()
-    sum(1 for _ in msgs_ref)
+    msgs_ref = list(db.collection("meta_messages").where("userId", "==", uid).stream())
 
-    # --- Metrics ---
-    total_revenue = sum(c.get("totalPaid", 0) for c in clients)
-    paying_clients = sum(1 for c in clients if c.get("totalPaid", 0) > 0)
-    avg_deal_size = total_revenue / paying_clients if paying_clients > 0 else 0
+    # Since we are focusing on leads, let's remove Revenue/Clients and show Leads/Campaigns
+    total_leads = len(leads)
+    
+    # Count messages
+    total_messages = sum(1 for _ in msgs_ref)
+    
+    # Just an example of getting "active" or "total" campaigns
+    total_campaigns = len(campaigns)
 
     kpis = [
-        { "label": 'Total Revenue', "value": f"₹{int(total_revenue):,}", "change": '+0%', "up": True, "color": '#100F88', "strip": '#100F88' },
-        { "label": 'Avg Deal Size', "value": f"₹{int(avg_deal_size):,}", "change": '+0%', "up": True, "color": '#059669', "strip": '#10b981' },
-        { "label": 'Total Leads', "value": str(len(leads)), "change": '+0%', "up": True, "color": '#7c3aed', "strip": '#7c3aed' },
-        { "label": 'Total Clients', "value": str(len(clients)), "change": '+0%', "up": True, "color": '#ef4444', "strip": '#ef4444' },
+        { "label": 'Total Leads', "value": str(total_leads), "change": '+0%', "up": True, "color": '#100F88', "strip": '#100F88' },
+        { "label": 'Total Campaigns', "value": str(total_campaigns), "change": '+0%', "up": True, "color": '#059669', "strip": '#10b981' },
+        { "label": 'Messages Sent', "value": str(total_messages), "change": '+0%', "up": True, "color": '#7c3aed', "strip": '#7c3aed' },
+        { "label": 'Conversions', "value": "0", "change": '+0%', "up": True, "color": '#ef4444', "strip": '#ef4444' },
     ]
 
     # --- Monthly Data (Jan, Feb, etc.) ---
@@ -53,9 +56,11 @@ async def get_dashboard_analytics(user: dict = Depends(get_current_user)):
             except:
                 pass
 
-    for c in clients:
-        created = c.get("createdAt", "")
-        if created:
+    # Assuming you might still want to track "conversions" but from lead status
+    for l in leads:
+        created = l.get("createdAt", "")
+        status = l.get("status", "")
+        if created and status.lower() in ["won", "converted", "closed"]:
             try:
                 dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
                 m = months[dt.month - 1]
@@ -83,9 +88,10 @@ async def get_dashboard_analytics(user: dict = Depends(get_current_user)):
 
     # --- Service Data ---
     service_counts = defaultdict(int)
-    for c in clients:
-        for s in c.get("services", []):
-            service_counts[s.get("name", "Other")] += 1
+    for l in leads:
+        service = l.get("serviceInterested")
+        if service:
+            service_counts[service] += 1
 
     service_data = [{"name": name, "value": count} for name, count in sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:4]]
     if not service_data:

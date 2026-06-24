@@ -103,6 +103,7 @@ export default function Dashboard() {
   const { currentUser } = useAuth()
   const [leads, setLeads] = useState<Lead[]>([])
   const [contentPlans, setContentPlans] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [heroVisible, setHeroVisible] = useState(false)
@@ -124,6 +125,9 @@ export default function Dashboard() {
       }),
       onSnapshot(query(collection(db, 'content_plans'), where('userId', '==', uid)), snap =>
         setContentPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      ),
+      onSnapshot(query(collection(db, 'tasks'), where('userId', '==', uid)), snap =>
+        setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       ),
     ]
     return () => subs.forEach(u => u())
@@ -155,6 +159,13 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
       .slice(0, 4)
     , [contentPlans])
+
+  const pendingTasks = useMemo(() =>
+    tasks
+      .filter(t => t.status !== 'Completed')
+      .sort((a, b) => new Date(a.dueDate || '2099').getTime() - new Date(b.dueDate || '2099').getTime())
+      .slice(0, 4)
+    , [tasks])
 
   const statusBadge = (s: string) => ({
     New: 'badge-new', Contacted: 'badge-contacted',
@@ -200,6 +211,21 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
           {kpis.map((kpi, i) => (
             <KPICard key={kpi.title} {...kpi} delay={i} />
+          ))}
+        </div>
+
+        {/* ══ QUICK ACTIONS ════════════════════════════════════════ */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.25s both' }}>
+          {[
+            { label: 'Add New Lead', icon: UserPlus, href: '/crm', color: 'bg-blue-600' },
+            { label: 'Create Task', icon: CheckCircle2, href: '/tasks', color: 'bg-emerald-600' },
+            { label: 'New Campaign', icon: MessageCircle, href: '/campaigns', color: 'bg-violet-600' },
+            { label: 'Plan Content', icon: Sparkles, href: '/content-planner', color: 'bg-amber-500' },
+          ].map((action, i) => (
+            <a key={action.label} href={action.href} className={`flex items-center gap-3 p-4 rounded-xl text-white ${action.color} hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}>
+              <div className="bg-white/20 p-2 rounded-lg"><action.icon size={18} /></div>
+              <span className="font-bold text-sm">{action.label}</span>
+            </a>
           ))}
         </div>
 
@@ -281,7 +307,7 @@ export default function Dashboard() {
         </div>
 
         {/* ══ BOTTOM ROW ══════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.4s both' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16,1,0.3,1) 0.4s both' }}>
 
           {/* Recent Leads */}
           <div className="card overflow-hidden">
@@ -376,6 +402,57 @@ export default function Dashboard() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Pending Tasks */}
+          <div className="card overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="section-title flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-500" />
+                Pending Tasks
+              </h2>
+              <a href="/tasks" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors group">
+                All Tasks <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+            </div>
+            {pendingTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 text-slate-400">
+                <CheckCircle2 size={28} className="mb-2 opacity-30 text-emerald-400" />
+                <p className="text-sm font-medium">All caught up!</p>
+                <a href="/tasks" className="text-xs text-blue-500 hover:text-blue-700 mt-1 font-semibold">Create a task →</a>
+              </div>
+            ) : (
+              <div>
+                {pendingTasks.map((task, i) => (
+                  <div
+                    key={task.id}
+                    className={clsx(
+                      'flex items-center gap-3.5 px-6 py-3.5 animate-list-item',
+                      'hover:bg-slate-50 transition-all duration-150 cursor-pointer group',
+                      i !== pendingTasks.length - 1 && 'border-b border-slate-100'
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                      <CheckCircle2 size={14} className="text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">{task.title}</p>
+                      <p className="text-xs text-slate-400">
+                        {task.dueDate ? `Due: ${task.dueDate}` : 'No due date'}
+                      </p>
+                    </div>
+                    <span className={clsx(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0",
+                      task.priority === 'High' ? "bg-red-50 text-red-600 border border-red-100" :
+                      task.priority === 'Medium' ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                      "bg-slate-50 text-slate-600 border border-slate-200"
+                    )}>
+                      {task.priority}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>

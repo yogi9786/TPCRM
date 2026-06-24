@@ -37,6 +37,8 @@ const KANBAN_COLORS: Record<string, string> = {
 function KanbanColumn({ col, leads, onEdit, onDelete, onStatusChange, onActivity }: any) {
   const { setNodeRef, isOver } = useDroppable({ id: col })
 
+  const totalValue = leads.reduce((sum: number, l: any) => sum + (l.value || 0), 0)
+
   return (
     <div
       ref={setNodeRef}
@@ -48,7 +50,10 @@ function KanbanColumn({ col, leads, onEdit, onDelete, onStatusChange, onActivity
     >
       <div className="flex items-center justify-between mb-4">
         <span className={STATUS_STYLE[col as LeadStatus]}>{col}</span>
-        <span className="text-xs text-black font-semibold bg-white px-2 py-0.5 rounded-md shadow-sm border border-slate-100">{leads.length}</span>
+        <div className="flex gap-2">
+          {totalValue > 0 && <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">₹{totalValue.toLocaleString('en-IN')}</span>}
+          <span className="text-xs text-black font-semibold bg-white px-2 py-0.5 rounded-md shadow-sm border border-slate-100">{leads.length}</span>
+        </div>
       </div>
       <div className="space-y-3 flex-1">
         {leads.length === 0 && (
@@ -120,7 +125,10 @@ function KanbanCard({ lead, onEdit, onDelete, onStatusChange, onActivity }: any)
       </div>
 
       {lead.companyName && <p className="text-xs font-semibold text-black opacity-80">{lead.companyName}</p>}
-      <p className="text-xs font-semibold text-black">{lead.phone}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-black">{lead.phone}</p>
+        {lead.value && <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">₹{lead.value.toLocaleString('en-IN')}</span>}
+      </div>
       <p className="text-[11px] text-black font-medium truncate">{lead.serviceInterested}</p>
 
       <div className="flex items-center justify-between pt-1.5">

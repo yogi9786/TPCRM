@@ -42,6 +42,7 @@ const EMPTY_FORM = {
   fullName: '', email: '', phone: '', companyName: '',
   leadSource: 'Website' as LeadSource, serviceInterested: '',
   status: 'New' as LeadStatus, notes: '',
+  value: '' as number | '', tags: [] as string[]
 }
 
 export default function CRM() {
@@ -50,6 +51,7 @@ export default function CRM() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [settings, setSettings] = useState<any>(() => JSON.parse(localStorage.getItem('crmSettings') || '{}'))
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -317,9 +319,11 @@ export default function CRM() {
       phone: lead.phone,
       companyName: lead.companyName || '',
       leadSource: lead.leadSource,
-      serviceInterested: lead.serviceInterested,
+      serviceInterested: lead.serviceInterested || '',
       status: lead.status,
       notes: lead.notes || '',
+      value: lead.value || '',
+      tags: lead.tags || [],
     })
     setShowModal(true)
   }
@@ -578,6 +582,28 @@ export default function CRM() {
                 <select className="select-field" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as LeadStatus }))}>
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <label className="label">Expected Value (₹)</label>
+                <input className="input-field" type="number" placeholder="50000" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value ? Number(e.target.value) : '' }))} />
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <label className="label">Tags</label>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {(settings.globalTags || ['VIP', 'Urgent', 'High Value', 'Cold']).map((tag: string) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, tags: f.tags.includes(tag) ? f.tags.filter(t => t !== tag) : [...f.tags, tag] }))}
+                      className={clsx(
+                        "text-[10px] font-bold uppercase px-2 py-1 rounded-md transition-colors",
+                        form.tags.includes(tag) ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="col-span-2">
                 <label className="label">Service Interested</label>
@@ -906,7 +932,7 @@ function TableView({
                   className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                 />
               </th>
-              {['Lead', 'Phone', 'Email', 'Source', 'Service', 'Status', 'Actions'].map(h => (
+              {['Lead', 'Phone', 'Email', 'Value & Tags', 'Source', 'Service', 'Status', 'Actions'].map(h => (
                 <th key={h} className="px-4 py-3.5 text-left text-[11px] font-extrabold text-black uppercase tracking-widest whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -971,6 +997,26 @@ function TableView({
                     <div className="text-black font-medium text-[13px] flex-1 min-w-0">
                       <EditableCell value={lead.email || ''} onSave={v => onUpdateField(lead.id, 'email', v)} placeholder="Email" />
                     </div>
+                  </div>
+                </td>
+
+                {/* Value & Tags */}
+                <td className="px-4 py-4">
+                  <div className="flex flex-col gap-1.5 items-start">
+                    {lead.value ? (
+                      <span className="text-[13px] font-bold text-emerald-600">₹{lead.value.toLocaleString('en-IN')}</span>
+                    ) : (
+                      <span className="text-[12px] font-medium text-slate-400">—</span>
+                    )}
+                    {lead.tags && lead.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {lead.tags.map(t => (
+                          <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </td>
 
