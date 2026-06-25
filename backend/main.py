@@ -16,7 +16,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
     FastAPICache.init(InMemoryBackend(), prefix="tekhportal-cache")
-    print("✅ InMemory cache initialized")
+    print("[OK] InMemory cache initialized")
     yield
 
 app = FastAPI(

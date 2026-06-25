@@ -181,17 +181,66 @@ def get_meta_campaigns(ad_account_id: Optional[str] = None) -> dict:
         return {"error": str(e), "data": []}
 
 
+def get_user_profile(user_id: str) -> dict:
+    """Fetch a Meta user's public profile (name, profile_pic) via Graph API."""
+    if not META_PAGE_ACCESS_TOKEN or META_PAGE_ACCESS_TOKEN in ("", "YOUR_LONG_LIVED_PAGE_ACCESS_TOKEN_HERE"):
+        return {}
+    try:
+        url = f"{GRAPH_BASE}/{user_id}"
+        params = {
+            "access_token": META_PAGE_ACCESS_TOKEN,
+            "fields": "name,profile_pic",
+        }
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        return {}
+    except Exception:
+        return {}
+
+
+def get_instagram_account_id(page_id: Optional[str] = None) -> Optional[str]:
+    """Get the Instagram Business Account ID connected to a Facebook Page."""
+    pid = page_id or META_PAGE_ID
+    if not pid or not META_PAGE_ACCESS_TOKEN:
+        return None
+    try:
+        url = f"{GRAPH_BASE}/{pid}"
+        params = {
+            "access_token": META_PAGE_ACCESS_TOKEN,
+            "fields": "instagram_business_account",
+        }
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("instagram_business_account", {}).get("id")
+        return None
+    except Exception:
+        return None
+
+
 def get_historical_conversations(page_id: Optional[str] = None, platform: str = "MESSENGER") -> dict:
     """Fetch existing conversations and messages from Meta Page."""
     pid = page_id or META_PAGE_ID
     if not pid or pid in ("", "YOUR_PAGE_ID_HERE"):
         return {"error": "META_PAGE_ID not configured"}
+    if not META_PAGE_ACCESS_TOKEN or META_PAGE_ACCESS_TOKEN in ("", "YOUR_LONG_LIVED_PAGE_ACCESS_TOKEN_HERE"):
+        return {"error": "META_PAGE_ACCESS_TOKEN not configured"}
 
-    url = f"{GRAPH_BASE}/{pid}/conversations"
+    # Instagram DMs require the Instagram Business Account ID
+    if platform == "INSTAGRAM":
+        ig_account_id = get_instagram_account_id(pid)
+        if not ig_account_id:
+            return {"error": "Instagram Business Account not connected to this page", "data": []}
+        target_id = ig_account_id
+    else:
+        target_id = pid
+
+    url = f"{GRAPH_BASE}/{target_id}/conversations"
     params = {
         "access_token": META_PAGE_ACCESS_TOKEN,
         "platform": platform,
-        "fields": "id,updated_time,participants,messages.limit(20){id,message,created_time,from,to,attachments}",
+        "fields": "id,updated_time,participants,messages.limit(25){id,message,created_time,from,to,attachments}",
         "limit": 50,
     }
     try:

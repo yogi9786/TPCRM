@@ -10,7 +10,7 @@ from services.firebase_service import get_db
 from services.meta_service import (
     verify_meta_signature, get_lead_details, get_lead_forms,
     fetch_leads_from_form, get_meta_config_status, get_historical_conversations,
-    send_message_to_meta
+    send_message_to_meta, get_user_profile
 )
 from config import META_VERIFY_TOKEN
 from auth import get_current_user
@@ -60,6 +60,7 @@ async def receive_webhook(request: Request):
     now = datetime.utcnow().isoformat()
     leads_processed = 0
     messages_processed = 0
+    object_type = payload.get("object", "page")
 
     for entry in payload.get("entry", []):
         page_id = entry.get("id", "")
@@ -166,9 +167,21 @@ async def receive_webhook(request: Request):
                     if ex:
                         continue
 
+                msg_source = "instagram" if object_type == "instagram" else "facebook"
+                
+                # Try to fetch the user's name and pic from Meta Graph API
+                sender_name = ""
+                sender_pic = ""
+                if direction == "inbound" and sender_id:
+                    profile = get_user_profile(sender_id)
+                    sender_name = profile.get("name", "")
+                    sender_pic = profile.get("profile_pic", "")
+
                 msg_doc = {
                     "mid": mid,
                     "senderId": sender_id,
+                    "senderName": sender_name,
+                    "senderProfilePic": sender_pic,
                     "recipientId": recipient_id,
                     "pageId": page_id,
                     "direction": direction,
@@ -177,7 +190,7 @@ async def receive_webhook(request: Request):
                         {"type": a.get("type", ""), "url": a.get("payload", {}).get("url", "")}
                         for a in attachments
                     ],
-                    "source": "instagram" if "instagram" in str(entry.get("id", "")).lower() else "facebook",
+                    "source": msg_source,
                     "timestamp": ts,
                     "createdAt": now,
                     "read": False,
@@ -187,7 +200,7 @@ async def receive_webhook(request: Request):
                 
                 # Ensure sender is in Leads
                 if direction == "inbound" and sender_id:
-                    _ensure_lead_for_sender(db, sender_id, msg_doc["source"])
+                    _ensure_lead_for_sender(db, sender_id, msg_source, sender_name)
 
             # Postbacks (button clicks)
             elif "postback" in messaging_event:
@@ -200,7 +213,7 @@ async def receive_webhook(request: Request):
                     "direction": "inbound",
                     "text": f"[Postback] {pb.get('title', '')} → {pb.get('payload', '')}",
                     "attachments": [],
-                    "source": "facebook",
+                    "source": "instagram" if object_type == "instagram" else "facebook",
                     "timestamp": ts,
                     "createdAt": now,
                     "read": False,
@@ -236,6 +249,38 @@ async def debug_meta_config():
         "backend_url": BACKEND_URL,
         "webhook_url": f"{BACKEND_URL}/api/meta/webhook",
         "status": get_meta_config_status(),
+    }
+
+
+@router.get("/debug/messages")
+async def debug_messages():
+    """Debug: shows raw meta_messages from Firestore + Instagram account linkage.
+    Use this to verify webhook delivery and campaign lead flow."""
+    from services.meta_service import get_instagram_account_id
+    from config import META_APP_ID, META_APP_SECRET, META_PAGE_ACCESS_TOKEN, META_PAGE_ID
+
+    db = get_db()
+    # Last 10 messages raw
+    docs = list(db.collection("meta_messages").order_by("createdAt", direction="DESCENDING").limit(10).stream())
+    raw_msgs = [{"id": d.id, **d.to_dict()} for d in docs]
+
+    # Last 5 leads
+    lead_docs = list(db.collection("leads").order_by("createdAt", direction="DESCENDING").limit(5).stream())
+    raw_leads = [{"id": d.id, "fullName": d.to_dict().get("fullName"), "leadSource": d.to_dict().get("leadSource"), "createdAt": d.to_dict().get("createdAt")} for d in lead_docs]
+
+    ig_account_id = get_instagram_account_id()
+
+    return {
+        "webhook_url": f"https://tpcrm.onrender.com/api/meta/webhook",
+        "instagram_business_account_id": ig_account_id or "NOT LINKED — connect Instagram to Facebook Page in Meta Business Suite",
+        "total_messages_in_db": len(list(db.collection("meta_messages").stream())),
+        "total_meta_leads_in_db": len(list(db.collection("meta_leads").stream())),
+        "last_10_messages": raw_msgs,
+        "last_5_crm_leads": raw_leads,
+        "config": {
+            "page_id": META_PAGE_ID or "MISSING",
+            "page_token_set": bool(META_PAGE_ACCESS_TOKEN and len(META_PAGE_ACCESS_TOKEN) > 20),
+        }
     }
 
 
@@ -414,20 +459,37 @@ async def get_message_stats(user: dict = Depends(get_current_user)):
 
 
 @router.get("/messages/conversations")
-@cache(expire=30)
 async def get_conversations(user: dict = Depends(get_current_user)):
-    """Group messages by sender (conversation threads)."""
+    """Group messages by conversation thread (per user)."""
     db = get_db()
     docs = db.collection("meta_messages").order_by("timestamp", direction="DESCENDING").stream()
     msgs = [{"id": d.id, **d.to_dict()} for d in docs]
 
-    # Group by senderId
+    # Group by the OTHER user's ID (not the page's ID)
+    # PAGE_ID is stored in pageId field. The user's ID is always the non-page side.
+    from config import META_PAGE_ID as PAGE_ID
     convos: dict = {}
     for m in msgs:
-        sid = m.get("senderId", "unknown")
-        if sid not in convos:
-            convos[sid] = {
-                "senderId": sid,
+        s_id = m.get("senderId", "")
+        r_id = m.get("recipientId", "")
+        page_id_val = m.get("pageId", "")
+        
+        # The user (non-page) ID: whichever of sender/recipient is NOT the page
+        if s_id and s_id != page_id_val and s_id != "page":
+            user_id = s_id
+        elif r_id and r_id != page_id_val and r_id != "page":
+            user_id = r_id
+        else:
+            user_id = s_id or r_id or "unknown"
+
+        if not user_id or user_id == "unknown":
+            continue
+
+        if user_id not in convos:
+            convos[user_id] = {
+                "senderId": user_id,
+                "senderName": m.get("senderName", ""),
+                "senderProfilePic": m.get("senderProfilePic", ""),
                 "source": m.get("source", "facebook"),
                 "lastMessage": m.get("text", ""),
                 "lastTimestamp": m.get("timestamp", ""),
@@ -435,10 +497,17 @@ async def get_conversations(user: dict = Depends(get_current_user)):
                 "messageCount": 0,
                 "messages": [],
             }
-        convos[sid]["messageCount"] += 1
+
+        # Update sender name and pic if we find a better one
+        if m.get("senderName") and not convos[user_id]["senderName"]:
+            convos[user_id]["senderName"] = m["senderName"]
+        if m.get("senderProfilePic") and not convos[user_id]["senderProfilePic"]:
+            convos[user_id]["senderProfilePic"] = m["senderProfilePic"]
+
+        convos[user_id]["messageCount"] += 1
         if not m.get("read") and m.get("direction") == "inbound":
-            convos[sid]["unreadCount"] += 1
-        convos[sid]["messages"].append(m)
+            convos[user_id]["unreadCount"] += 1
+        convos[user_id]["messages"].append(m)
 
     result = sorted(convos.values(), key=lambda x: x["lastTimestamp"], reverse=True)
     return result
@@ -515,18 +584,51 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             "meta_error": err,
         }
 
-    convos = fb_data.get("data", []) + ig_data.get("data", [])
+    convos = []
+    if "data" in fb_data:
+        for c in fb_data["data"]:
+            c["_source"] = "facebook"
+            convos.append(c)
+    if "data" in ig_data:
+        for c in ig_data["data"]:
+            c["_source"] = "instagram"
+            convos.append(c)
+            
     db = get_db()
     new_messages = 0
+    sender_profiles = {}
+    
+    from services.meta_service import get_instagram_account_id
+    from config import META_PAGE_ID as PAGE_ID
+    ig_account_id = get_instagram_account_id()
 
     for convo in convos:
         participants = convo.get("participants", {}).get("data", [])
         if not participants:
             continue
 
-        # Find the non-page participant (the actual user)
-        sender = participants[0] if len(participants) == 1 else participants[1]
+        convo_source = convo.get("_source", "facebook")
+        my_id = ig_account_id if convo_source == "instagram" and ig_account_id else PAGE_ID
+
+        # Find the non-page participant (the actual user, not your page/IG account)
+        sender = None
+        for p in participants:
+            if p.get("id") != my_id:
+                sender = p
+                break
+        # Fallback: if we can't distinguish, take first participant
+        if not sender:
+            sender = participants[0]
+            
         sender_id = sender.get("id", "unknown")
+        
+        # Cache profile fetches so we don't spam the API for historical sync
+        if sender_id not in sender_profiles and sender_id != "unknown":
+            sender_profiles[sender_id] = get_user_profile(sender_id)
+            
+        profile = sender_profiles.get(sender_id, {})
+        sender_name = profile.get("name", sender.get("name", ""))
+        sender_pic = profile.get("profile_pic", "")
 
         msgs = convo.get("messages", {}).get("data", [])
         for m in msgs:
@@ -548,13 +650,14 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
             msg_doc = {
                 "mid": mid,
                 "senderId": sender_id,
-                "senderName": sender.get("name", ""),
-                "recipientId": "page",
-                "pageId": "page",
+                "senderName": sender_name,
+                "senderProfilePic": sender_pic,
+                "recipientId": my_id,
+                "pageId": my_id,
                 "direction": direction,
                 "text": m.get("message", ""),
                 "attachments": [],
-                "source": "instagram" if "instagram" in str(m.get("id", "")) or "ig" in str(convo.get("id", "")) else "facebook",
+                "source": convo_source,
                 "timestamp": m.get("created_time", ""),
                 "createdAt": datetime.utcnow().isoformat() + "Z",
                 "read": True,
@@ -567,7 +670,7 @@ async def sync_meta_messages(user: dict = Depends(get_current_user)):
                 
         # Ensure sender is in Leads
         if sender_id and sender_id != "unknown":
-            _ensure_lead_for_sender(db, sender_id, "facebook", sender.get("name", ""))
+            _ensure_lead_for_sender(db, sender_id, convo_source, sender_name)
 
     return {
         "status": "success",

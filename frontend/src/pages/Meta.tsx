@@ -47,6 +47,7 @@ interface MetaMessage {
 
 interface Conversation {
   senderId: string
+  senderName?: string
   source: 'facebook' | 'instagram'
   lastMessage: string
   lastTimestamp: string
@@ -179,6 +180,21 @@ export default function MetaPage() {
       }
     } catch { toast.error('Sync failed — check backend connection') }
     finally { setSyncing(false) }
+  }
+
+  const [subscribing, setSubscribing] = useState(false)
+  async function subscribeWebhook() {
+    setSubscribing(true)
+    try {
+      const res = await authFetch(`${API}/meta/subscribe`, { method: 'POST', body: JSON.stringify({}) })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Successfully subscribed Page to Meta Webhook!')
+      } else {
+        toast.error(data.detail || 'Failed to subscribe webhook')
+      }
+    } catch { toast.error('Network error connecting to backend') }
+    finally { setSubscribing(false) }
   }
 
   async function syncMessages() {
@@ -617,6 +633,14 @@ export default function MetaPage() {
                 >
                   <RefreshCw size={13} /> Refresh
                 </button>
+                <button
+                  onClick={subscribeWebhook}
+                  disabled={subscribing}
+                  className="btn-secondary flex items-center gap-2 text-sm text-green-700 bg-green-50 hover:bg-green-100 border-green-200"
+                >
+                  <RefreshCw size={13} className={subscribing ? 'animate-spin' : ''} />
+                  Subscribe Webhook
+                </button>
                 {/* Source filter */}
                 <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
                   {(['all', 'facebook', 'instagram'] as const).map(f => (
@@ -666,55 +690,80 @@ export default function MetaPage() {
 
                 {/* ── Conversation List ─────────────────────────── */}
                 <div className={clsx("glass-card overflow-hidden flex-col w-full lg:w-auto", selectedConvo ? "hidden lg:flex" : "flex")}>
-                  <div className="px-4 py-3 border-b border-slate-100">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                     <p className="text-sm font-bold text-slate-800">Conversations</p>
+                    <span className="text-xs text-slate-400">{filteredConvos.length} threads</span>
                   </div>
                   <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
                     {filteredConvos.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400">
-                        <InboxIcon size={32} className="mb-2 opacity-30" />
-                        <p className="text-sm font-medium">No messages yet</p>
-                        <p className="text-xs mt-1 text-center px-4">Messages from Facebook & Instagram Messenger will appear here when someone contacts your page</p>
+                      <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400 px-4">
+                        <InboxIcon size={32} className="mb-3 opacity-30" />
+                        <p className="text-sm font-semibold text-center">No conversations yet</p>
+                        <p className="text-xs mt-2 text-center leading-relaxed">
+                          {msgFilter === 'instagram'
+                            ? 'Instagram DMs need your Instagram Business Account connected to your Facebook Page in Meta Business Suite.'
+                            : 'Facebook messages appear here after someone sends a message to your Page.'
+                          }
+                        </p>
+                        <p className="text-[11px] mt-3 text-center text-slate-300">Click "Sync History" to load existing messages</p>
                       </div>
                     ) : (
-                      filteredConvos.map(convo => (
-                        <button
-                          key={convo.senderId}
-                          onClick={() => {
-                            setSelectedConvo(convo)
-                            markConvoRead(convo.senderId)
-                          }}
-                          className={clsx(
-                            'w-full text-left px-4 py-3 transition-colors hover:bg-slate-50',
-                            selectedConvo?.senderId === convo.senderId && 'bg-blue-50 hover:bg-blue-50'
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={clsx(
-                              'w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5',
-                              convo.source === 'instagram' ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-blue-600'
-                            )}>
-                              <User size={15} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className={clsx('text-sm font-semibold truncate', convo.unreadCount > 0 ? 'text-slate-900' : 'text-slate-700')}>
-                                  {convo.source === 'instagram' ? '📷' : '📘'} {convo.senderId.slice(0, 10)}...
-                                </p>
-                                {convo.unreadCount > 0 && (
-                                  <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">
-                                    {convo.unreadCount}
+                      filteredConvos.map(convo => {
+                        const displayName = convo.senderName || `User ${convo.senderId.slice(-6)}`
+                        const initials = convo.senderName
+                          ? convo.senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                          : convo.senderId.slice(-2).toUpperCase()
+                        return (
+                          <button
+                            key={convo.senderId}
+                            onClick={() => {
+                              setSelectedConvo(convo)
+                              markConvoRead(convo.senderId)
+                            }}
+                            className={clsx(
+                              'w-full text-left px-4 py-3 transition-colors hover:bg-slate-50',
+                              selectedConvo?.senderId === convo.senderId && 'bg-blue-50 hover:bg-blue-50'
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              {convo.senderProfilePic ? (
+                                <img src={convo.senderProfilePic} alt={displayName} className="w-10 h-10 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                              ) : (
+                                <div className={clsx(
+                                  'w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5',
+                                  convo.source === 'instagram' ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-gradient-to-br from-blue-500 to-blue-700'
+                                )}>
+                                  {initials}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className={clsx('text-sm font-semibold truncate', convo.unreadCount > 0 ? 'text-slate-900' : 'text-slate-700')}>
+                                    {displayName}
+                                  </p>
+                                  {convo.unreadCount > 0 && (
+                                    <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                      {convo.unreadCount}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className={clsx(
+                                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
+                                    convo.source === 'instagram' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'
+                                  )}>
+                                    {convo.source === 'instagram' ? '📷 IG' : '📘 FB'}
                                   </span>
-                                )}
+                                  <p className="text-xs text-slate-500 truncate">{convo.lastMessage || '[attachment]'}</p>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                  {convo.lastTimestamp ? new Date(convo.lastTimestamp).toLocaleString() : ''}
+                                </p>
                               </div>
-                              <p className="text-xs text-slate-500 truncate mt-0.5">{convo.lastMessage || 'No text'}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
-                                {convo.lastTimestamp ? new Date(convo.lastTimestamp).toLocaleString() : ''}
-                              </p>
                             </div>
-                          </div>
-                        </button>
-                      ))
+                          </button>
+                        )
+                      })
                     )}
                   </div>
                 </div>
@@ -745,7 +794,7 @@ export default function MetaPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 text-sm">
-                            {selectedConvo.source === 'instagram' ? 'Instagram' : 'Facebook'} User
+                            {selectedConvo.senderName || `${selectedConvo.source === 'instagram' ? 'Instagram' : 'Facebook'} User`}
                           </p>
                           <p className="text-[11px] text-slate-400 font-mono">ID: {selectedConvo.senderId}</p>
                         </div>
