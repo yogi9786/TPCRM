@@ -67,7 +67,7 @@ export default function Analytics() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {kpis.map(({ label, value, change, up, color, strip }) => (
+          {kpis.map(({ label, value, change, up, color, strip }: { label: string, value: string | number, change: string, up: boolean, color: string, strip: string }) => (
             <div
               key={label}
               className="card p-5 cursor-default animate-slide-up"
@@ -126,7 +126,7 @@ export default function Analytics() {
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie data={sourceData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value">
-                  {sourceData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  {sourceData.map((entry: any, i: number) => <Cell key={i} fill={entry.fill} />)}
                 </Pie>
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #d8d8ee', borderRadius: 12, fontSize: 12 }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: '#5a5898' }} />

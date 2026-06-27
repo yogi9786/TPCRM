@@ -72,6 +72,20 @@ async def root():
 async def health_check():
     return {"status": "healthy", "service": "tekhportal-crm-api"}
 
+@app.get("/privacy", tags=["legal"])
+async def privacy_policy():
+    from fastapi.responses import HTMLResponse
+    html_content = """
+    <html>
+        <head><title>Privacy Policy</title></head>
+        <body>
+            <h1>Privacy Policy & Data Deletion</h1>
+            <p>If you wish to delete your data, please contact tekhportal@gmail.com.</p>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

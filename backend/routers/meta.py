@@ -25,7 +25,6 @@ GRAPH_BASE = "https://graph.facebook.com/v21.0"
 # ── Webhook Verification (GET) ─────────────────────────────────────────────────
 
 @router.get("/webhook")
-@cache(expire=30)
 async def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
@@ -416,7 +415,6 @@ async def import_all_meta_leads(user: dict = Depends(get_current_user)):
 # ── Messages ───────────────────────────────────────────────────────────────────
 
 @router.get("/messages")
-@cache(expire=30)
 async def get_meta_messages(
     source: Optional[str] = None,
     sender_id: Optional[str] = None,
